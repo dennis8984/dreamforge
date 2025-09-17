@@ -1,0 +1,5 @@
+runpod==1.7.3
+google-genai==0.3.0
+Pillow==11.0.0
+boto3==1.35.62
+redis==5.2.0

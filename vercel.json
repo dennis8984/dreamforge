@@ -1,0 +1,27 @@
+{
+  "buildCommand": "cd dreamforge-app && npm run build",
+  "outputDirectory": "dreamforge-app/.next",
+  "installCommand": "cd dreamforge-app && npm install",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/api/py/:path*",
+      "destination": "https://dreamforge-api.runpod.io/:path*"
+    }
+  ],
+  "functions": {
+    "dreamforge-app/app/api/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_KEY": "@supabase_service_key",
+    "STRIPE_SECRET_KEY": "@stripe_secret",
+    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key",
+    "RUNPOD_API_KEY": "@runpod_api_key",
+    "NANO_BANANA_API_KEY": "@nano_banana_api_key"
+  }
+}
