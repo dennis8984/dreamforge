@@ -4,9 +4,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyCiMwaVuUFCXVNHmZejVhKmY5YptQJir5A';
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-// Runpod configuration
-const RUNPOD_API_URL = process.env.RUNPOD_API_URL || 'https://api.runpod.ai/v2/xez46ruk06q834/run';
-const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || '';
+// Runpod configuration - gets values from Vercel environment variables
+const RUNPOD_API_URL = process.env.RUNPOD_API_URL || process.env.NEXT_PUBLIC_RUNPOD_API_URL || '';
+const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || process.env.NEXT_PUBLIC_RUNPOD_API_KEY || '';
 
 // Model configurations for Nano Banana
 export const NANO_BANANA_MODELS = {
@@ -96,14 +96,24 @@ export async function generateImageWithRunpod(
   console.log('generateImageWithRunpod called with:', {
     prompt: prompt.substring(0, 50) + '...',
     hasApiKey: !!RUNPOD_API_KEY,
-    apiUrl: RUNPOD_API_URL
+    apiUrl: RUNPOD_API_URL,
+    apiKeyLength: RUNPOD_API_KEY.length
   });
 
   if (!RUNPOD_API_KEY) {
-    console.log('No Runpod API key available');
+    console.error('No Runpod API key available. Set RUNPOD_API_KEY in Vercel environment variables.');
     return {
       success: false,
       error: 'Runpod API key not configured'
+    };
+  }
+
+  if (!RUNPOD_API_URL || RUNPOD_API_URL === '') {
+    console.error('No Runpod API URL configured. Set RUNPOD_API_URL in Vercel environment variables.');
+    console.error('Format: https://api.runpod.ai/v2/YOUR_ENDPOINT_ID/run');
+    return {
+      success: false,
+      error: 'Runpod API URL not configured'
     };
   }
 
