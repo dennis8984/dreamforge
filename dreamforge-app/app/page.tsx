@@ -8,7 +8,20 @@ import Header from '@/components/Header';
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userTier, setUserTier] = useState('free');
-  const [selectedModel, setSelectedModel] = useState<{ id: string; name: string; category: string; tier: string; sample_image: string; style: string } | null>(null);
+  const [selectedModel, setSelectedModel] = useState<{
+    id: string;
+    name: string;
+    description?: string;
+    category?: string;
+    tier?: string;
+    sample_image?: string;
+    style?: string;
+    thumbnail_url?: string;
+    is_premium?: boolean;
+    is_featured?: boolean;
+    view_count?: number;
+    like_count?: number;
+  } | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');

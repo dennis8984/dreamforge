@@ -5,10 +5,16 @@ import { useState } from 'react';
 interface Model {
   id: string;
   name: string;
-  category: string;
-  tier: string;
-  sample_image: string;
-  style: string;
+  description?: string;
+  category?: string;
+  tier?: string;
+  sample_image?: string;
+  style?: string;
+  thumbnail_url?: string;
+  is_premium?: boolean;
+  is_featured?: boolean;
+  view_count?: number;
+  like_count?: number;
 }
 
 interface GenerationResult {
