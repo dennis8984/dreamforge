@@ -44,25 +44,26 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    const checkAdminAuth = () => {
+      // Check if user is admin
+      const token = localStorage.getItem('access_token');
+      const adminKey = localStorage.getItem('admin_key');
+
+      // Simple admin check - in production, verify with backend
+      if (token && (adminKey === 'dreamforge_admin_2024' || window.location.search.includes('admin=true'))) {
+        setIsAuthenticated(true);
+        setIsAdmin(true);
+      } else {
+        // Redirect to login or show access denied
+        alert('Admin access required. Add ?admin=true to URL for demo access.');
+        router.push('/');
+      }
+    };
+
     checkAdminAuth();
     loadModels();
-  }, []);
+  }, [router]);
 
-  const checkAdminAuth = () => {
-    // Check if user is admin
-    const token = localStorage.getItem('access_token');
-    const adminKey = localStorage.getItem('admin_key');
-
-    // Simple admin check - in production, verify with backend
-    if (token && (adminKey === 'dreamforge_admin_2024' || window.location.search.includes('admin=true'))) {
-      setIsAuthenticated(true);
-      setIsAdmin(true);
-    } else {
-      // Redirect to login or show access denied
-      alert('Admin access required. Add ?admin=true to URL for demo access.');
-      router.push('/');
-    }
-  };
 
   const loadModels = async () => {
     setLoading(true);

@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userTier, setUserTier] = useState('free');
-  const [selectedModel, setSelectedModel] = useState<{
+  const [selectedModel] = useState<{
     id: string;
     name: string;
     description?: string;
@@ -75,7 +75,6 @@ export default function Home() {
 
         <AIGallery
           userTier={userTier}
-          onModelSelect={setSelectedModel}
         />
       </div>
     </main>

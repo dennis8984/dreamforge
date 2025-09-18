@@ -57,7 +57,7 @@ function getModels() {
 }
 
 // Save models to file
-function saveModels(models: any[]) {
+function saveModels(models: unknown[]) {
   try {
     fs.writeFileSync(MODELS_FILE, JSON.stringify(models, null, 2));
     return true;
@@ -70,7 +70,6 @@ function saveModels(models: any[]) {
 // Simple admin authentication check
 function isAdminAuthenticated(request: NextRequest): boolean {
   // In production, verify JWT token and admin role
-  const authHeader = request.headers.get('authorization');
   const adminKey = request.headers.get('x-admin-key');
 
   // For demo: check for admin key or query param

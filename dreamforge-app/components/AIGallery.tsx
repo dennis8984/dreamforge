@@ -17,10 +17,9 @@ interface Model {
 
 interface AIGalleryProps {
   userTier: string;
-  onModelSelect?: (model: Model) => void;
 }
 
-export default function AIGallery({ userTier, onModelSelect }: AIGalleryProps) {
+export default function AIGallery({ userTier }: AIGalleryProps) {
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');

@@ -19,7 +19,7 @@ function getModels() {
 }
 
 // Save models to file
-function saveModels(models: any[]) {
+function saveModels(models: unknown[]) {
   try {
     fs.writeFileSync(MODELS_FILE, JSON.stringify(models, null, 2));
     return true;
@@ -31,7 +31,6 @@ function saveModels(models: any[]) {
 
 // Simple admin authentication check
 function isAdminAuthenticated(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
   const adminKey = request.headers.get('x-admin-key');
 
   return adminKey === 'dreamforge_admin_2024' ||
@@ -41,8 +40,9 @@ function isAdminAuthenticated(request: NextRequest): boolean {
 // PATCH /api/admin/models/[id] - Update model
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   if (!isAdminAuthenticated(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -50,7 +50,7 @@ export async function PATCH(
   try {
     const body = await request.json();
     const models = getModels();
-    const modelIndex = models.findIndex((m: any) => m.id === params.id);
+    const modelIndex = models.findIndex((m: unknown) => (m as {id: string}).id === id);
 
     if (modelIndex === -1) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 });
@@ -78,15 +78,16 @@ export async function PATCH(
 // DELETE /api/admin/models/[id] - Delete model
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   if (!isAdminAuthenticated(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const models = getModels();
-    const filteredModels = models.filter((m: any) => m.id !== params.id);
+    const filteredModels = models.filter((m: unknown) => (m as {id: string}).id !== id);
 
     if (models.length === filteredModels.length) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 });

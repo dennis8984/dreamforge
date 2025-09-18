@@ -153,7 +153,8 @@ export async function POST(request: NextRequest) {
 
     if (action === 'like') {
       // In a real app, this would update the database
-      const model = models.find(m => m.id === modelId);
+      const models = getModels();
+      const model = models.find((m: unknown) => (m as {id: string; like_count: number}).id === modelId) as {id: string; like_count: number} | undefined;
       if (model) {
         model.like_count += 1;
         return NextResponse.json({
@@ -165,7 +166,8 @@ export async function POST(request: NextRequest) {
 
     if (action === 'view') {
       // Track model view
-      const model = models.find(m => m.id === modelId);
+      const models = getModels();
+      const model = models.find((m: unknown) => (m as {id: string; view_count: number}).id === modelId) as {id: string; view_count: number} | undefined;
       if (model) {
         model.view_count += 1;
         return NextResponse.json({
