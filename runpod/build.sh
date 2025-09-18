@@ -3,7 +3,7 @@
 # Runpod Docker Build Script
 # Run this on a machine with Docker installed, or use GitHub Actions
 
-DOCKER_USERNAME=${1:-"your_dockerhub_username"}
+DOCKER_USERNAME=${1:-"dennisf598"}
 IMAGE_NAME="dreamforge-gpu"
 TAG="latest"
 

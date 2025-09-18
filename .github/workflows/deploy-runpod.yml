@@ -30,8 +30,8 @@ jobs:
         context: ./runpod
         push: true
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/dreamforge-gpu:latest
-          ${{ secrets.DOCKER_USERNAME }}/dreamforge-gpu:${{ github.sha }}
+          dennisf598/dreamforge-gpu:latest
+          dennisf598/dreamforge-gpu:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
