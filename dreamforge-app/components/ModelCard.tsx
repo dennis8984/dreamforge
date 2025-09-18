@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 
 interface Model {
   id: string;
@@ -30,6 +29,7 @@ export default function ModelCard({ model, userTier, onClick }: ModelCardProps) 
     >
       <div className="relative aspect-square">
         {model.thumbnail_url ? (
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={model.thumbnail_url}
             alt={model.name}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import ModelCard from './ModelCard';
 import PaywallModal from './PaywallModal';
 
@@ -31,6 +30,7 @@ export default function AIGallery({ userTier, onModelSelect }: AIGalleryProps) {
 
   useEffect(() => {
     fetchModels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const fetchModels = async () => {

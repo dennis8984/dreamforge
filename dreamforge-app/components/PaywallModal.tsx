@@ -2,8 +2,20 @@
 
 import { useState } from 'react';
 
+interface Model {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  thumbnail_url?: string;
+  is_premium?: boolean;
+  is_featured?: boolean;
+  view_count?: number;
+  like_count?: number;
+}
+
 interface PaywallModalProps {
-  model: any;
+  model: Model;
   onClose: () => void;
 }
 
@@ -54,7 +66,7 @@ export default function PaywallModal({ model, onClose }: PaywallModalProps) {
             Premium Model Access Required
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            "{model.name}" is a premium model. Upgrade your plan to access this and other exclusive models.
+            &quot;{model.name}&quot; is a premium model. Upgrade your plan to access this and other exclusive models.
           </p>
         </div>
 

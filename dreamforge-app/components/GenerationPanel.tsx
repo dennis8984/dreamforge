@@ -1,15 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 
-interface GenerationPanelProps {
-  selectedModel: any;
-  userTier: string;
-  onGenerate: (result: any) => void;
+interface Model {
+  id: string;
+  name: string;
+  category: string;
+  tier: string;
+  sample_image: string;
+  style: string;
 }
 
-export default function GenerationPanel({ selectedModel, userTier, onGenerate }: GenerationPanelProps) {
+interface GenerationResult {
+  id?: string;
+  image_url: string;
+  generation_time_ms?: number;
+  width?: number;
+  height?: number;
+  cached?: boolean;
+  status?: string;
+}
+
+interface GenerationPanelProps {
+  selectedModel: Model | null;
+  userTier: string;
+  onGenerate: (result: GenerationResult) => void;
+}
+
+export default function GenerationPanel({ selectedModel, onGenerate }: GenerationPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -57,8 +75,8 @@ export default function GenerationPanel({ selectedModel, userTier, onGenerate }:
       const result = await response.json();
       setGeneratedImage(result.image_url);
       onGenerate(result);
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate image');
+    } catch (err) {
+      setError((err as Error).message || 'Failed to generate image');
     } finally {
       setGenerating(false);
     }
@@ -152,6 +170,7 @@ export default function GenerationPanel({ selectedModel, userTier, onGenerate }:
         <div className="flex items-center justify-center">
           {generatedImage ? (
             <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={generatedImage}
                 alt="Generated"

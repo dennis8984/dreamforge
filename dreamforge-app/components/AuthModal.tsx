@@ -43,8 +43,8 @@ export default function AuthModal({ mode, onClose, onSuccess }: AuthModalProps) 
       const data = await response.json();
       localStorage.setItem('access_token', data.access_token);
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err) {
+      setError((err as Error).message || 'An error occurred');
     } finally {
       setLoading(false);
     }
