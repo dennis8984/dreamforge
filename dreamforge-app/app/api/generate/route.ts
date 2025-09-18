@@ -28,8 +28,7 @@ export async function POST(request: NextRequest) {
       model: modelConfig?.name || 'default',
       hasRunpodKey: !!RUNPOD_API_KEY,
       runpodKeyLength: RUNPOD_API_KEY.length,
-      promptPreview: prompt.substring(0, 50) + '...',
-      isRawPrompt: prompt.toLowerCase().startsWith('raw:')
+      promptPreview: prompt.substring(0, 50) + '...'
     });
 
     // If no Runpod API key, return error
@@ -44,18 +43,14 @@ export async function POST(request: NextRequest) {
       }, { status: 503 });
     }
 
-    // Check if prompt starts with "raw:" to bypass enhancement
-    const isRawPrompt = prompt.toLowerCase().startsWith('raw:');
-    const actualPrompt = isRawPrompt ? prompt.substring(4).trim() : prompt;
-
-    // Generate with Nano Banana (Gemini enhancement + Runpod generation)
-    const result = await generateWithNanoBanana(actualPrompt, model_id, {
+    // Generate with Nano Banana (direct NSFW generation)
+    const result = await generateWithNanoBanana(prompt, model_id, {
       negative_prompt: parameters?.negative_prompt,
       width: parameters?.width || 1024,
       height: parameters?.height || 1024,
       guidance_scale: parameters?.guidanceScale || 7.5,
       steps: parameters?.steps || 50,
-      enhance: isRawPrompt ? false : (parameters?.enhance !== false) // Bypass enhancement if raw
+      enhance: false // Direct NSFW generation without enhancement
     });
 
     if (!result.success) {
@@ -68,7 +63,7 @@ export async function POST(request: NextRequest) {
         id: result.jobId,
         status: 'processing',
         message: 'Image is being generated',
-        enhanced_prompt: result.enhancedPrompt
+        original_prompt: prompt
       });
     }
 
@@ -78,7 +73,7 @@ export async function POST(request: NextRequest) {
         id: Math.random().toString(36).substr(2, 9),
         image_url: result.imageUrl,
         status: 'success',
-        enhanced_prompt: result.enhancedPrompt,
+        original_prompt: prompt,
         generation_time_ms: 3000,
         width: parameters?.width || 1024,
         height: parameters?.height || 1024

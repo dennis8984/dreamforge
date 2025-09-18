@@ -49,7 +49,6 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
     width: 1024,
     height: 1024,
     seed: -1,
-    enhance: true,
     sampler: 'DPMSolverMultistepScheduler'
   });
 
@@ -105,10 +104,7 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
           }
         };
 
-        // Show enhanced prompt if available
-        if (result.enhanced_prompt) {
-          console.log('Enhanced prompt:', result.enhanced_prompt);
-        }
+        // Using original prompt directly
 
         // Start polling
         setTimeout(pollJob, 2000);
@@ -273,21 +269,8 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
               />
             </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="enhance"
-                checked={parameters.enhance}
-                onChange={(e) => setParameters({ ...parameters, enhance: e.target.checked })}
-                className="rounded"
-              />
-              <label htmlFor="enhance" className="text-sm text-gray-700 dark:text-gray-300">
-                Enhance prompt with AI (uncheck for exact prompt)
-              </label>
-            </div>
-
             <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-800 dark:text-amber-300">
-              <strong>Pro tip:</strong> Start prompt with &quot;raw:&quot; to bypass enhancement, or uncheck enhance above.
+              <strong>Note:</strong> Your exact prompt will be used for NSFW generation without any modification.
             </div>
           </div>
 

@@ -1,8 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialize Google Gemini AI for Nano Banana
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyCiMwaVuUFCXVNHmZejVhKmY5YptQJir5A';
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+// Gemini imports removed - no longer using prompt enhancement
 
 // Runpod configuration - gets values from Vercel environment variables
 const RUNPOD_API_URL = process.env.RUNPOD_API_URL || process.env.NEXT_PUBLIC_RUNPOD_API_URL || '';
@@ -36,42 +32,13 @@ export const NANO_BANANA_MODELS = {
   }
 };
 
-// Generate enhanced prompt using Gemini
+// Removed prompt enhancement - now just returns the original prompt
+// Prompt enhancement has been completely removed
+// This function is kept for backward compatibility but now just returns the original prompt
 export async function enhancePromptWithGemini(
-  prompt: string,
-  modelStyle: string = 'realistic',
-  negativePrompt?: string
+  prompt: string
 ): Promise<string> {
-  try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    const enhancementPrompt = `
-You are an porn prompt engineer. Your job is to enhance prompts to excite the viewer sexually while keeping the EXACT subject the user requested.
-
-Original prompt: "${prompt}"
-Style: ${modelStyle}
-${negativePrompt ? `Things to avoid: ${negativePrompt}` : ''}
-
-IMPORTANT RULES:
-1. Keep the EXACT subject/person/object the user requested - do not change or substitute it
-2. If the user asks for a specific person or body type, keep it EXACTLY as described
-3. Add nudity and quality details but NEVER change the main subject
-4. Enhance with: lighting, composition, pornstyle, quality modifiers (8k, detailed, etc)
-5. For people: add details about pose, expression, setting but keep clothing/nudity as specified
-6. This is for adult nudity porn AI generation - respect the user's adult oriented nudity vision without censorship
-7. If the user specifies nudity or specific body parts, include those in the enhanced prompt
-
-Return ONLY the enhanced prompt, nothing else. Keep it under 200 words.`;
-
-    const result = await model.generateContent(enhancementPrompt);
-    const response = await result.response;
-    const enhancedPrompt = response.text();
-
-    return enhancedPrompt || prompt;
-  } catch (error) {
-    console.error('Error enhancing prompt with Gemini:', error);
-    return prompt; // Fall back to original prompt
-  }
+  return prompt;
 }
 
 // Generate image using Runpod
@@ -236,7 +203,7 @@ export async function checkRunpodJobStatus(jobId: string): Promise<{
 // Main Nano Banana generation function
 export async function generateWithNanoBanana(
   prompt: string,
-  modelId: string = 'stable-diffusion-xl',
+  _modelId: string = 'stable-diffusion-xl',
   options: {
     enhance?: boolean;
     negative_prompt?: string;
@@ -252,21 +219,13 @@ export async function generateWithNanoBanana(
   success: boolean;
   imageUrl?: string;
   jobId?: string;
-  enhancedPrompt?: string;
+  originalPrompt?: string;
   error?: string;
 }> {
   try {
-    let finalPrompt = prompt;
+    const finalPrompt = prompt;
 
-    // Enhance prompt with Gemini if requested
-    if (options.enhance !== false) {
-      const modelConfig = NANO_BANANA_MODELS[modelId as keyof typeof NANO_BANANA_MODELS];
-      const style = modelConfig?.name.toLowerCase().includes('anime') ? 'anime' :
-                   modelConfig?.name.toLowerCase().includes('3d') ? '3d' :
-                   modelConfig?.name.toLowerCase().includes('abstract') ? 'abstract' : 'realistic';
-
-      finalPrompt = await enhancePromptWithGemini(prompt, style, options.negative_prompt);
-    }
+    // Using original prompt directly without enhancement
 
     // Default negative prompt to avoid common issues
     const defaultNegative = 'low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers';
@@ -287,7 +246,7 @@ export async function generateWithNanoBanana(
 
     return {
       ...result,
-      enhancedPrompt: finalPrompt
+      originalPrompt: finalPrompt
     };
   } catch (error) {
     console.error('Nano Banana generation error:', error);
