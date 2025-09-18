@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import ModelCard from '@/components/ModelCard';
-import PaywallModal from '@/components/PaywallModal';
 
 interface Model {
   id: string;
@@ -24,8 +23,6 @@ export default function ModelsPage() {
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [blockedModel, setBlockedModel] = useState<Model | null>(null);
 
   const loadModels = async () => {
     setLoading(true);
@@ -157,13 +154,8 @@ export default function ModelsPage() {
   ];
 
   const handleModelClick = (model: Model) => {
-    if (model.is_premium && userTier === 'free') {
-      setBlockedModel(model);
-      setShowPaywall(true);
-    } else {
-      // Navigate to generation with this model
-      window.location.href = `/?model=${model.id}`;
-    }
+    // Navigate to model profile page
+    window.location.href = `/model/${model.id}`;
   };
 
   const categories = ['all', 'realistic', 'anime', 'abstract', '3d', 'artistic'];
@@ -256,12 +248,6 @@ export default function ModelsPage() {
         </div>
       </div>
 
-      {showPaywall && blockedModel && (
-        <PaywallModal
-          model={blockedModel}
-          onClose={() => setShowPaywall(false)}
-        />
-      )}
     </main>
   );
 }

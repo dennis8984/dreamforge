@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import ModelCard from './ModelCard';
-import PaywallModal from './PaywallModal';
 
 interface Model {
   id: string;
@@ -18,15 +17,13 @@ interface Model {
 
 interface AIGalleryProps {
   userTier: string;
-  onModelSelect: (model: Model) => void;
+  onModelSelect?: (model: Model) => void;
 }
 
 export default function AIGallery({ userTier, onModelSelect }: AIGalleryProps) {
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [blockedModel, setBlockedModel] = useState<Model | null>(null);
 
   useEffect(() => {
     fetchModels();
@@ -59,30 +56,8 @@ export default function AIGallery({ userTier, onModelSelect }: AIGalleryProps) {
   };
 
   const handleModelClick = async (model: Model) => {
-    if (model.is_premium && userTier === 'free') {
-      setBlockedModel(model);
-      setShowPaywall(true);
-    } else {
-      try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`http://localhost:8000/api/models/${model.id}/profile`, {
-          headers: token ? {
-            'Authorization': `Bearer ${token}`
-          } : {}
-        });
-
-        const fullProfile = await response.json();
-
-        if (fullProfile.paywall_active) {
-          setBlockedModel(model);
-          setShowPaywall(true);
-        } else {
-          onModelSelect(fullProfile);
-        }
-      } catch (error) {
-        console.error('Error fetching model profile:', error);
-      }
-    }
+    // Navigate to model profile page
+    window.location.href = `/model/${model.id}`;
   };
 
   const categories = ['all', 'realistic', 'anime', 'abstract', '3d', 'artistic'];
@@ -132,12 +107,6 @@ export default function AIGallery({ userTier, onModelSelect }: AIGalleryProps) {
         </div>
       )}
 
-      {showPaywall && blockedModel && (
-        <PaywallModal
-          model={blockedModel}
-          onClose={() => setShowPaywall(false)}
-        />
-      )}
     </div>
   );
 }
