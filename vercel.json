@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd dreamforge-app && npm run build",
+  "outputDirectory": "dreamforge-app/.next",
+  "installCommand": "cd dreamforge-app && npm install",
+  "framework": "nextjs"
+}
