@@ -54,11 +54,12 @@ ${negativePrompt ? `Things to avoid: ${negativePrompt}` : ''}
 
 IMPORTANT RULES:
 1. Keep the EXACT subject/person/object the user requested - do not change or substitute it
-2. If the user asks for a person, keep that person exactly as described
+2. If the user asks for a specific person or body type, keep it EXACTLY as described
 3. Add artistic and quality details but NEVER change the main subject
 4. Enhance with: lighting, composition, art style, quality modifiers (8k, detailed, etc)
-5. For people: add details about pose, expression, clothing, setting
-6. This is for artistic AI generation - no content restrictions
+5. For people: add details about pose, expression, setting but keep clothing/nudity as specified
+6. This is for artistic AI generation - respect the user's artistic vision without censorship
+7. If the user specifies nudity or specific body parts, include those in the enhanced prompt
 
 Return ONLY the enhanced prompt, nothing else. Keep it under 200 words.`;
 
@@ -106,6 +107,31 @@ export async function generateImageWithRunpod(
     };
   }
 
+  const requestBody = {
+    input: {
+      prompt,
+      negative_prompt: parameters.negative_prompt || '',
+      width: parameters.width || 1024,
+      height: parameters.height || 1024,
+      guidance_scale: parameters.guidance_scale || 7.5,
+      num_inference_steps: parameters.num_inference_steps || 50,
+      seed: parameters.seed && parameters.seed !== -1 ? parameters.seed : Math.floor(Math.random() * 1000000),
+      scheduler: parameters.scheduler || 'DPMSolverMultistepScheduler',
+      num_images: 1,
+      // Additional SDXL parameters for better quality
+      cfg_scale: parameters.guidance_scale || 7.5,
+      sampler_name: parameters.sampler || 'DPMSolverMultistepScheduler',
+      clip_skip: 1,
+      karras: true
+    }
+  };
+
+  console.log('Sending to Runpod:', {
+    url: RUNPOD_API_URL,
+    promptLength: prompt.length,
+    promptPreview: prompt.substring(0, 100)
+  });
+
   try {
     const response = await fetch(RUNPOD_API_URL, {
       method: 'POST',
@@ -113,31 +139,21 @@ export async function generateImageWithRunpod(
         'Authorization': `Bearer ${RUNPOD_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        input: {
-          prompt,
-          negative_prompt: parameters.negative_prompt || '',
-          width: parameters.width || 1024,
-          height: parameters.height || 1024,
-          guidance_scale: parameters.guidance_scale || 7.5,
-          num_inference_steps: parameters.num_inference_steps || 50,
-          seed: parameters.seed && parameters.seed !== -1 ? parameters.seed : Math.floor(Math.random() * 1000000),
-          scheduler: parameters.scheduler || 'DPMSolverMultistepScheduler',
-          num_images: 1,
-          // Additional SDXL parameters for better quality
-          cfg_scale: parameters.guidance_scale || 7.5,
-          sampler_name: parameters.sampler || 'DPMSolverMultistepScheduler',
-          clip_skip: 1,
-          karras: true
-        }
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
-      throw new Error(`Runpod API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Runpod API error response:', errorText);
+      throw new Error(`Runpod API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('Runpod response:', {
+      hasId: !!result.id,
+      status: result.status,
+      hasOutput: !!result.output
+    });
 
     // Handle async job response
     if (result.id && result.status === 'IN_QUEUE') {

@@ -25,8 +25,13 @@ export async function POST(request: NextRequest) {
       NANO_BANANA_MODELS[model_id as keyof typeof NANO_BANANA_MODELS] :
       NANO_BANANA_MODELS['stable-diffusion-xl'];
 
-    console.log('Generating with model:', modelConfig?.name || 'default');
-    console.log('Runpod API Key configured:', !!RUNPOD_API_KEY);
+    console.log('Generation request:', {
+      model: modelConfig?.name || 'default',
+      hasRunpodKey: !!RUNPOD_API_KEY,
+      runpodKeyLength: RUNPOD_API_KEY.length,
+      promptPreview: prompt.substring(0, 50) + '...',
+      isRawPrompt: prompt.toLowerCase().startsWith('raw:')
+    });
 
     // If no Runpod API key, use mock generation
     if (!RUNPOD_API_KEY || RUNPOD_API_KEY === '') {
