@@ -46,14 +46,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check if prompt starts with "raw:" to bypass enhancement
+    const isRawPrompt = prompt.toLowerCase().startsWith('raw:');
+    const actualPrompt = isRawPrompt ? prompt.substring(4).trim() : prompt;
+
     // Generate with Nano Banana (Gemini enhancement + Runpod generation)
-    const result = await generateWithNanoBanana(prompt, model_id, {
+    const result = await generateWithNanoBanana(actualPrompt, model_id, {
       negative_prompt: parameters?.negative_prompt,
       width: parameters?.width || 1024,
       height: parameters?.height || 1024,
       guidance_scale: parameters?.guidanceScale || 7.5,
       steps: parameters?.steps || 50,
-      enhance: parameters?.enhance !== false // Default to true
+      enhance: isRawPrompt ? false : (parameters?.enhance !== false) // Bypass enhancement if raw
     });
 
     if (!result.success) {

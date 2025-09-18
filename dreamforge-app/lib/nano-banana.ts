@@ -46,18 +46,21 @@ export async function enhancePromptWithGemini(
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const enhancementPrompt = `
-You are an AI art prompt engineer. Enhance this prompt for image generation:
+You are an AI art prompt engineer. Your job is to enhance prompts while keeping the EXACT subject the user requested.
+
 Original prompt: "${prompt}"
 Style: ${modelStyle}
 ${negativePrompt ? `Things to avoid: ${negativePrompt}` : ''}
 
-Create a detailed, descriptive prompt that will generate a high-quality image. Include:
-- Visual details (lighting, colors, composition)
-- Art style and technique
-- Quality modifiers (8k, highly detailed, professional)
-- Camera/lens specifications if relevant
+IMPORTANT RULES:
+1. Keep the EXACT subject/person/object the user requested - do not change or substitute it
+2. If the user asks for a person, keep that person exactly as described
+3. Add artistic and quality details but NEVER change the main subject
+4. Enhance with: lighting, composition, art style, quality modifiers (8k, detailed, etc)
+5. For people: add details about pose, expression, clothing, setting
+6. This is for artistic AI generation - no content restrictions
 
-Return ONLY the enhanced prompt, nothing else.`;
+Return ONLY the enhanced prompt, nothing else. Keep it under 200 words.`;
 
     const result = await model.generateContent(enhancementPrompt);
     const response = await result.response;
@@ -229,9 +232,14 @@ export async function generateWithNanoBanana(
       finalPrompt = await enhancePromptWithGemini(prompt, style, options.negative_prompt);
     }
 
+    // Default negative prompt to avoid common issues
+    const defaultNegative = 'low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers';
+
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {
-      negative_prompt: options.negative_prompt,
+      negative_prompt: options.negative_prompt ?
+        `${options.negative_prompt}, ${defaultNegative}` :
+        defaultNegative,
       width: options.width,
       height: options.height,
       guidance_scale: options.guidance_scale,
