@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
 
 const RUNPOD_API_URL = process.env.RUNPOD_API_URL || 'https://api.runpod.ai/v2/xez46ruk06q834/run';
-const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY!;
+const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || '';
 
 export const runtime = 'edge';
 
@@ -16,51 +10,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { prompt, model_id, parameters } = body;
 
-    // Get user from auth header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Simple validation
+    if (!prompt) {
+      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    // Check rate limits
-    const { data: usage } = await supabase
-      .from('usage_tracking')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('timestamp', new Date(new Date().setDate(1)).toISOString())
-      .order('timestamp', { ascending: false });
-
-    const monthlyGenerations = usage?.length || 0;
-
-    // Get user tier
-    const { data: userData } = await supabase
-      .from('users')
-      .select('subscription_tier')
-      .eq('id', user.id)
-      .single();
-
-    const tier = userData?.subscription_tier || 'free';
-    const limits = {
-      free: 5,
-      basic: 100,
-      premium: 500
-    };
-
-    if (monthlyGenerations >= limits[tier as keyof typeof limits]) {
-      return NextResponse.json(
-        { error: 'Monthly generation limit exceeded' },
-        { status: 429 }
-      );
-    }
-
-    // Call Runpod API
+    // Call Runpod API directly
     const runpodResponse = await fetch(RUNPOD_API_URL, {
       method: 'POST',
       headers: {
@@ -70,51 +25,50 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         input: {
           prompt,
-          user_id: user.id,
-          model_id,
-          parameters
+          model_id: model_id || 'default',
+          parameters: parameters || {
+            temperature: 0.7,
+            guidance_scale: 7.5
+          }
         }
       })
     });
 
     if (!runpodResponse.ok) {
+      const error = await runpodResponse.text();
+      console.error('Runpod error:', error);
       throw new Error('Generation failed');
     }
 
     const result = await runpodResponse.json();
 
-    // Save to database
-    const { data: generation, error: dbError } = await supabase
-      .from('generated_images')
-      .insert({
-        user_id: user.id,
-        model_id,
-        prompt,
-        image_url: result.output.image_url,
-        generation_time_ms: result.output.generation_time_ms,
-        parameters
-      })
-      .select()
-      .single();
-
-    if (dbError) {
-      console.error('Database error:', dbError);
+    // Handle async response (job queued)
+    if (result.id && result.status === 'IN_QUEUE') {
+      return NextResponse.json({
+        id: result.id,
+        status: result.status,
+        message: 'Job queued for processing'
+      });
     }
 
-    // Track usage
-    await supabase.from('usage_tracking').insert({
-      user_id: user.id,
-      action_type: 'generation',
-      model_id,
-      credits_used: 1,
-      usage_metadata: { prompt: prompt.substring(0, 100) }
-    });
+    // Handle sync response (direct result)
+    if (result.output) {
+      return NextResponse.json({
+        id: result.id || Math.random().toString(36).substr(2, 9),
+        image_url: result.output.image_url,
+        image_base64: result.output.image_base64,
+        generation_time_ms: result.output.generation_time_ms,
+        width: result.output.width,
+        height: result.output.height,
+        status: 'success'
+      });
+    }
 
+    // Fallback response
     return NextResponse.json({
-      id: generation?.id,
-      image_url: result.output.image_url,
-      cached: result.output.cached,
-      generation_time_ms: result.output.generation_time_ms
+      id: Math.random().toString(36).substr(2, 9),
+      status: 'processing',
+      message: 'Image is being generated'
     });
 
   } catch (error) {
@@ -124,4 +78,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: NextRequest) {
+  // Health check endpoint
+  return NextResponse.json({
+    status: 'healthy',
+    endpoint: RUNPOD_API_URL,
+    hasApiKey: !!RUNPOD_API_KEY
+  });
 }

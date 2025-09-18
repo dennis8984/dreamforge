@@ -33,18 +33,11 @@ export default function GenerationPanel({ selectedModel, userTier, onGenerate }:
     setError(null);
 
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setError('Please login to generate images');
-        setGenerating(false);
-        return;
-      }
-
-      const response = await fetch('http://localhost:8000/api/generate', {
+      // Use the Next.js API route instead of backend directly
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           prompt,
