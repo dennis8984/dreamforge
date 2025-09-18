@@ -119,9 +119,14 @@ export async function generateImageWithRunpod(
           height: parameters.height || 1024,
           guidance_scale: parameters.guidance_scale || 7.5,
           num_inference_steps: parameters.num_inference_steps || 50,
-          seed: parameters.seed || Math.floor(Math.random() * 1000000),
-          scheduler: 'DPMSolverMultistepScheduler',
-          num_images: 1
+          seed: parameters.seed && parameters.seed !== -1 ? parameters.seed : Math.floor(Math.random() * 1000000),
+          scheduler: parameters.scheduler || 'DPMSolverMultistepScheduler',
+          num_images: 1,
+          // Additional SDXL parameters for better quality
+          cfg_scale: parameters.guidance_scale || 7.5,
+          sampler_name: parameters.sampler || 'DPMSolverMultistepScheduler',
+          clip_skip: 1,
+          karras: true
         }
       })
     });
@@ -211,6 +216,9 @@ export async function generateWithNanoBanana(
     height?: number;
     guidance_scale?: number;
     steps?: number;
+    seed?: number;
+    sampler?: string;
+    scheduler?: string;
   } = {}
 ): Promise<{
   success: boolean;
@@ -243,7 +251,10 @@ export async function generateWithNanoBanana(
       width: options.width,
       height: options.height,
       guidance_scale: options.guidance_scale,
-      num_inference_steps: options.steps
+      num_inference_steps: options.steps,
+      seed: options.seed,
+      scheduler: options.scheduler,
+      sampler: options.sampler
     });
 
     return {

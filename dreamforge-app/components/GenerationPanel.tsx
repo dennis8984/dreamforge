@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { GENERATION_PRESETS, applyPreset } from '@/lib/generation-presets';
 
 interface Model {
   id: string;
@@ -44,7 +45,12 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
     temperature: 0.7,
     top_p: 0.95,
     guidanceScale: 7.5,
-    steps: 50
+    steps: 30,
+    width: 1024,
+    height: 1024,
+    seed: -1,
+    enhance: true,
+    sampler: 'DPMSolverMultistepScheduler'
   });
 
   const handleGenerate = async () => {
@@ -137,6 +143,37 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Style Preset
+            </label>
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  const preset = GENERATION_PRESETS[e.target.value];
+                  if (preset) {
+                    const applied = applyPreset(preset, prompt);
+                    setPrompt(applied.prompt);
+                    setNegativePrompt(applied.negativePrompt);
+                    setParameters(prev => ({ ...prev, ...applied.parameters }));
+                  }
+                }
+              }}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">Select a preset style...</option>
+              <option value="artistic-portrait">Artistic Portrait</option>
+              <option value="anime-character">Anime Character</option>
+              <option value="photorealistic">Photorealistic</option>
+              <option value="artistic-nsfw">Artistic Figure</option>
+              <option value="fantasy-art">Fantasy Art</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="oil-painting">Oil Painting</option>
+              <option value="quick-draft">Quick Draft</option>
+              <option value="high-detail">High Detail</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Negative Prompt (Optional)
             </label>
             <textarea
@@ -160,24 +197,42 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
           )}
 
           <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Temperature: {parameters.temperature}
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.1"
-                value={parameters.temperature}
-                onChange={(e) => setParameters({ ...parameters, temperature: parseFloat(e.target.value) })}
-                className="w-full"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Width: {parameters.width}
+                </label>
+                <select
+                  value={parameters.width}
+                  onChange={(e) => setParameters({ ...parameters, width: parseInt(e.target.value) })}
+                  className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                >
+                  <option value="512">512</option>
+                  <option value="768">768</option>
+                  <option value="1024">1024</option>
+                  <option value="1280">1280</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Height: {parameters.height}
+                </label>
+                <select
+                  value={parameters.height}
+                  onChange={(e) => setParameters({ ...parameters, height: parseInt(e.target.value) })}
+                  className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                >
+                  <option value="512">512</option>
+                  <option value="768">768</option>
+                  <option value="1024">1024</option>
+                  <option value="1280">1280</option>
+                </select>
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Guidance Scale: {parameters.guidanceScale}
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Guidance Scale: {parameters.guidanceScale} (Higher = More prompt adherence)
               </label>
               <input
                 type="range"
@@ -188,6 +243,51 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
                 onChange={(e) => setParameters({ ...parameters, guidanceScale: parseFloat(e.target.value) })}
                 className="w-full"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Steps: {parameters.steps} (Higher = Better quality, slower)
+              </label>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                step="5"
+                value={parameters.steps}
+                onChange={(e) => setParameters({ ...parameters, steps: parseInt(e.target.value) })}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Seed: {parameters.seed === -1 ? 'Random' : parameters.seed}
+              </label>
+              <input
+                type="number"
+                value={parameters.seed}
+                onChange={(e) => setParameters({ ...parameters, seed: parseInt(e.target.value) || -1 })}
+                placeholder="-1 for random"
+                className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="enhance"
+                checked={parameters.enhance}
+                onChange={(e) => setParameters({ ...parameters, enhance: e.target.checked })}
+                className="rounded"
+              />
+              <label htmlFor="enhance" className="text-sm text-gray-700 dark:text-gray-300">
+                Enhance prompt with AI (uncheck for exact prompt)
+              </label>
+            </div>
+
+            <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-800 dark:text-amber-300">
+              <strong>Pro tip:</strong> Start prompt with "raw:" to bypass enhancement, or uncheck enhance above.
             </div>
           </div>
 
