@@ -13,10 +13,5 @@
     "dreamforge-app/app/api/*.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "RUNPOD_API_KEY": "@runpod_api_key",
-    "RUNPOD_API_URL": "@runpod_api_url",
-    "NANO_BANANA_API_KEY": "@nano_banana_api_key"
   }
 }
