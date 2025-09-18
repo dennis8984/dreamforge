@@ -46,8 +46,12 @@ export default function AdminDashboard() {
     max_resolution: '1024x1024',
     styles: [] as string[],
     speed: 'fast',
-    sample_prompts: [] as string[],
-    negative_prompt: '',
+    sample_prompts: [
+      'nude woman, completely naked, full body, professional photography',
+      'explicit nudity, sexy nude model, no clothes, high quality',
+      'naked woman, full nude, uncensored, artistic photography'
+    ] as string[],
+    negative_prompt: 'child, minor, underage, teenager, young',
     generated_images: [] as string[]
   });
   const [generatingImage, setGeneratingImage] = useState(false);
@@ -233,10 +237,10 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: currentPrompt || 'beautiful sexy nude model, professional photography, studio lighting, high quality',
+          prompt: currentPrompt || `nude ${newModel.name || 'woman'}, completely naked, no clothes, full nude, explicit nudity, professional photography, studio lighting, high quality, 8k`,
           model_id: 'stable-diffusion-xl',
           parameters: {
-            negative_prompt: newModel.negative_prompt || 'clothes, clothing, dressed, covered, censored, child, minor',
+            negative_prompt: 'child, minor, underage, teenager, young',
             width: 1024,
             height: 1024,
             steps: 30,

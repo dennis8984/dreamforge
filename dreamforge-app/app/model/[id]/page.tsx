@@ -326,7 +326,7 @@ export default function ModelProfilePage() {
           {activeTab === 'gallery' ? (
             <div className="p-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Generated Images
+                Model Gallery
               </h2>
               {model.generated_images && model.generated_images.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -345,14 +345,41 @@ export default function ModelProfilePage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  <p className="mb-4">No generated images yet for this model.</p>
-                  <Link
-                    href={`/admin?admin=true`}
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    Go to Admin to generate images
-                  </Link>
+                <div className="space-y-6">
+                  <div className="text-center py-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      No images generated yet for this model
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">
+                      Images will appear here once generated through the admin panel
+                    </p>
+                  </div>
+
+                  {model.sample_prompts && model.sample_prompts.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                        Try these prompts with this model:
+                      </h3>
+                      <div className="space-y-2">
+                        {model.sample_prompts.map((prompt, idx) => (
+                          <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                            <code className="text-sm text-gray-700 dark:text-gray-300">
+                              {prompt}
+                            </code>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-center">
+                    <Link
+                      href={`/admin?admin=true`}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Go to Admin Panel to Generate Images
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>

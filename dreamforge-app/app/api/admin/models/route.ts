@@ -145,8 +145,12 @@ export async function POST(request: NextRequest) {
       like_count: 0,
       nano_banana_model: body.nano_banana_model || 'stable-diffusion-xl',
       generation_mode: body.generation_mode || 'both',
-      sample_prompts: body.sample_prompts || [],
-      negative_prompt: body.negative_prompt || 'child, minor, underage',
+      sample_prompts: body.sample_prompts || [
+        'beautiful nude woman, professional photography, studio lighting',
+        'sexy nude model, artistic photography, high quality',
+        'nude fashion model, professional photoshoot, 8k quality'
+      ],
+      negative_prompt: body.negative_prompt || 'child, minor, underage, clothes, clothing, dressed',
       generated_images: body.generated_images || [],
       capabilities: body.capabilities || {
         max_resolution: '1024x1024',
