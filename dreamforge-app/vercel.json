@@ -1,5 +1,4 @@
 {
-  "rootDirectory": "dreamforge-app",
   "framework": "nextjs",
   "rewrites": [
     {
