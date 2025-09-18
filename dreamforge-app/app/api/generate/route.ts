@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
-const RUNPOD_API_URL = process.env.RUNPOD_API_URL || 'https://api.runpod.ai/v2/YOUR_ENDPOINT_ID/runsync';
+const RUNPOD_API_URL = process.env.RUNPOD_API_URL || 'https://api.runpod.ai/v2/xez46ruk06q834/run';
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY!;
 
 export const runtime = 'edge';
