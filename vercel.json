@@ -8,10 +8,5 @@
       "source": "/api/py/:path*",
       "destination": "https://dreamforge-api.runpod.io/:path*"
     }
-  ],
-  "functions": {
-    "dreamforge-app/app/api/generate/route.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
