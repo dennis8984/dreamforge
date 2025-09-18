@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { v4 as uuidv4 } from 'uuid';
 import Header from '@/components/Header';
 
 interface Model {
@@ -118,7 +119,7 @@ export default function ModelProfilePage() {
     if (!inputMessage.trim()) return;
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       role: 'user',
       content: inputMessage,
       timestamp: new Date()
@@ -143,7 +144,7 @@ export default function ModelProfilePage() {
       const data = await response.json();
 
       const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: uuidv4(),
         role: 'assistant',
         content: data.response || `That's interesting! As ${model?.name}, I'd love to help you explore that idea further. What specific aspect would you like to focus on?`,
         timestamp: new Date()
@@ -153,7 +154,7 @@ export default function ModelProfilePage() {
     } catch {
       // Fallback response if API fails
       const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: uuidv4(),
         role: 'assistant',
         content: `That's a great question! I'd be happy to help you with that. What specific details would you like to explore?`,
         timestamp: new Date()

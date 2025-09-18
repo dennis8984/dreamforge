@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify({
           ...newModel,
-          id: Date.now().toString(),
+          // Let the API generate a UUID
           capabilities: {
             max_resolution: newModel.max_resolution,
             styles: newModel.styles,
