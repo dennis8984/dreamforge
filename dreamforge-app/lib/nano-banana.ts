@@ -160,11 +160,41 @@ export async function generateImageWithRunpod(
     }
 
     // Handle direct result
-    if (result.output && result.output.image_url) {
-      return {
-        success: true,
-        imageUrl: result.output.image_url
-      };
+    if (result.output) {
+      let imageUrl = null;
+
+      // Check various output formats
+      if (typeof result.output === 'string') {
+        // If it's a base64 string, add data URI prefix
+        if (!result.output.startsWith('http') && !result.output.startsWith('data:')) {
+          imageUrl = `data:image/png;base64,${result.output}`;
+        } else {
+          imageUrl = result.output;
+        }
+      } else if (Array.isArray(result.output) && result.output.length > 0) {
+        const firstImage = result.output[0];
+        if (!firstImage.startsWith('http') && !firstImage.startsWith('data:')) {
+          imageUrl = `data:image/png;base64,${firstImage}`;
+        } else {
+          imageUrl = firstImage;
+        }
+      } else if (result.output.image_url) {
+        imageUrl = result.output.image_url;
+      } else if (result.output.images && Array.isArray(result.output.images)) {
+        const firstImage = result.output.images[0];
+        if (!firstImage.startsWith('http') && !firstImage.startsWith('data:')) {
+          imageUrl = `data:image/png;base64,${firstImage}`;
+        } else {
+          imageUrl = firstImage;
+        }
+      }
+
+      if (imageUrl) {
+        return {
+          success: true,
+          imageUrl: imageUrl
+        };
+      }
     }
 
     return {
@@ -209,13 +239,29 @@ export async function checkRunpodJobStatus(jobId: string): Promise<{
       let imageUrl = null;
 
       if (typeof result.output === 'string') {
-        imageUrl = result.output;
+        // If it's a base64 string, add data URI prefix
+        if (!result.output.startsWith('http') && !result.output.startsWith('data:')) {
+          imageUrl = `data:image/png;base64,${result.output}`;
+        } else {
+          imageUrl = result.output;
+        }
       } else if (Array.isArray(result.output) && result.output.length > 0) {
-        imageUrl = result.output[0];
+        // If array, take first item and check if it's base64
+        const firstImage = result.output[0];
+        if (!firstImage.startsWith('http') && !firstImage.startsWith('data:')) {
+          imageUrl = `data:image/png;base64,${firstImage}`;
+        } else {
+          imageUrl = firstImage;
+        }
       } else if (result.output.image_url) {
         imageUrl = result.output.image_url;
       } else if (result.output.images && Array.isArray(result.output.images)) {
-        imageUrl = result.output.images[0];
+        const firstImage = result.output.images[0];
+        if (!firstImage.startsWith('http') && !firstImage.startsWith('data:')) {
+          imageUrl = `data:image/png;base64,${firstImage}`;
+        } else {
+          imageUrl = firstImage;
+        }
       }
 
       return {

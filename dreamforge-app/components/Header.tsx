@@ -54,8 +54,8 @@ export default function Header({ isAuthenticated, setIsAuthenticated, userTier }
 
               {isAuthenticated ? (
                 <>
-                  <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                    Dashboard
+                  <Link href="/gallery" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                    My Gallery
                   </Link>
                   <div className="flex items-center space-x-3">
                     <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-medium">
