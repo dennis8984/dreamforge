@@ -121,7 +121,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Health check endpoint
-  const isConfigured = !!RUNPOD_API_KEY && RUNPOD_API_KEY.length > 0;
+  const isConfigured = !!RUNPOD_API_KEY && RUNPOD_API_KEY.length > 0 && RUNPOD_API_KEY !== 'your_runpod_api_key_here';
+  const apiUrl = process.env.RUNPOD_API_URL || '';
 
   return NextResponse.json({
     status: isConfigured ? 'ready' : 'not_configured',
@@ -131,6 +132,14 @@ export async function GET(request: NextRequest) {
     message: isConfigured ?
       'Real AI generation ready' :
       'ERROR: Runpod not configured. Set RUNPOD_API_KEY and RUNPOD_API_URL in Vercel environment variables.',
-    configuration_required: !isConfigured
+    configuration_required: !isConfigured,
+    // Debug info (remove in production)
+    debug: {
+      hasKey: !!RUNPOD_API_KEY,
+      keyLength: RUNPOD_API_KEY?.length || 0,
+      isPlaceholder: RUNPOD_API_KEY === 'your_runpod_api_key_here',
+      hasUrl: !!apiUrl,
+      urlValue: apiUrl ? apiUrl.substring(0, 40) + '...' : 'NOT SET'
+    }
   });
 }
