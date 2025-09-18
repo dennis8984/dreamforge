@@ -57,8 +57,13 @@ function getModels() {
   return defaultModels;
 }
 
-// Save models to file
+// Save models to file (only works in development)
 function saveModels(models: unknown[]) {
+  // Skip file writes in production (Vercel has read-only filesystem)
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
   try {
     fs.writeFileSync(MODELS_FILE, JSON.stringify(models, null, 2));
     return true;
@@ -171,7 +176,6 @@ export async function POST(request: NextRequest) {
               view_count: newModel.view_count,
               like_count: newModel.like_count,
               nano_banana_model: newModel.nano_banana_model,
-              capabilities: newModel.capabilities,
               tags: newModel.capabilities.styles || []
             }
           ])
@@ -189,10 +193,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fall back to file system
-    models.push(newModel);
-    saveModels(models);
-    return NextResponse.json(newModel, { status: 201 });
+    // Fall back to file system (only in development)
+    if (process.env.NODE_ENV !== 'production') {
+      models.push(newModel);
+      saveModels(models);
+      return NextResponse.json(newModel, { status: 201 });
+    }
+
+    // In production without Supabase, return error
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    );
   } catch (error) {
     console.error('Error creating model:', error);
     return NextResponse.json(

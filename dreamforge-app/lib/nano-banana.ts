@@ -87,6 +87,20 @@ export async function generateImageWithRunpod(
   imageUrl?: string;
   error?: string;
 }> {
+  console.log('generateImageWithRunpod called with:', {
+    prompt: prompt.substring(0, 50) + '...',
+    hasApiKey: !!RUNPOD_API_KEY,
+    apiUrl: RUNPOD_API_URL
+  });
+
+  if (!RUNPOD_API_KEY) {
+    console.log('No Runpod API key available');
+    return {
+      success: false,
+      error: 'Runpod API key not configured'
+    };
+  }
+
   try {
     const response = await fetch(RUNPOD_API_URL, {
       method: 'POST',

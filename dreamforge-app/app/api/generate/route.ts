@@ -26,10 +26,12 @@ export async function POST(request: NextRequest) {
       NANO_BANANA_MODELS['stable-diffusion-xl'];
 
     console.log('Generating with model:', modelConfig?.name || 'default');
+    console.log('Runpod API Key configured:', !!RUNPOD_API_KEY);
 
     // If no Runpod API key, use mock generation
-    if (!RUNPOD_API_KEY) {
-      console.log('No Runpod API key, using mock generation');
+    if (!RUNPOD_API_KEY || RUNPOD_API_KEY === '') {
+      console.log('No Runpod API key found, using mock generation');
+      console.log('Set RUNPOD_API_KEY in Vercel environment variables for real generation');
       const mockImage = generateMockImage(prompt);
 
       return NextResponse.json({

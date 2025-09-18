@@ -19,8 +19,13 @@ function getModels() {
   return [];
 }
 
-// Save models to file
+// Save models to file (only works in development)
 function saveModels(models: unknown[]) {
+  // Skip file writes in production (Vercel has read-only filesystem)
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
   try {
     fs.writeFileSync(MODELS_FILE, JSON.stringify(models, null, 2));
     return true;
