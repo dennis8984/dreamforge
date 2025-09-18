@@ -29,12 +29,14 @@ export default function ModelCard({ model, userTier, onClick }: ModelCardProps) 
     >
       <div className="relative aspect-square">
         {model.thumbnail_url ? (
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={model.thumbnail_url}
-            alt={model.name}
-            className="w-full h-full object-cover"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={model.thumbnail_url}
+              alt={model.name}
+              className="w-full h-full object-cover"
+            />
+          </>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-purple-400 to-blue-600"></div>
         )}
