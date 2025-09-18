@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { signIn, signUp } from '@/lib/supabase';
 
 interface AuthModalProps {
   mode: 'login' | 'register';
@@ -20,29 +21,22 @@ export default function AuthModal({ mode, onClose, onSuccess }: AuthModalProps) 
     setLoading(true);
     setError(null);
 
-    const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
-    const params = new URLSearchParams({
-      email,
-      password,
-      ...(mode === 'register' && fullName ? { full_name: fullName } : {})
-    });
-
     try {
-      const response = await fetch(`http://localhost:8000${endpoint}?${params}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+      if (mode === 'register') {
+        const { data, error } = await signUp(email, password, fullName);
+        if (error) throw error;
+        if (data?.user) {
+          localStorage.setItem('supabase_user_id', data.user.id);
+          onSuccess();
         }
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || 'Authentication failed');
+      } else {
+        const { data, error } = await signIn(email, password);
+        if (error) throw error;
+        if (data?.user) {
+          localStorage.setItem('supabase_user_id', data.user.id);
+          onSuccess();
+        }
       }
-
-      const data = await response.json();
-      localStorage.setItem('access_token', data.access_token);
-      onSuccess();
     } catch (err) {
       setError((err as Error).message || 'An error occurred');
     } finally {

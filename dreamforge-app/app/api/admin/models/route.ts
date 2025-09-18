@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import fs from 'fs';
 import path from 'path';
 
@@ -88,8 +89,31 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const models = getModels();
-  return NextResponse.json(models);
+  try {
+    // Try to get from Supabase first if configured
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        return NextResponse.json(data);
+      }
+      if (error) {
+        console.error('Supabase error:', error);
+      }
+    }
+
+    // Fall back to file system
+    const models = getModels();
+    return NextResponse.json(models);
+  } catch (err) {
+    console.error('Error fetching models:', err);
+    // Fall back to file system
+    const models = getModels();
+    return NextResponse.json(models);
+  }
 }
 
 // POST /api/admin/models - Create new model
@@ -130,14 +154,45 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     };
 
-    models.push(newModel);
+    // Try to save to Supabase if configured
+    if (supabase) {
+      try {
+        const { data: supabaseModel, error } = await supabase
+          .from('ai_models')
+          .insert([
+            {
+              id: newModel.id,
+              name: newModel.name,
+              description: newModel.description,
+              category: newModel.category,
+              thumbnail_url: newModel.thumbnail_url,
+              is_premium: newModel.is_premium,
+              is_featured: newModel.is_featured,
+              view_count: newModel.view_count,
+              like_count: newModel.like_count,
+              nano_banana_model: newModel.nano_banana_model,
+              capabilities: newModel.capabilities,
+              tags: newModel.capabilities.styles || []
+            }
+          ])
+          .select()
+          .single();
 
-    if (saveModels(models)) {
-      return NextResponse.json(newModel, { status: 201 });
-    } else {
-      // If file save fails, still return success (in-memory)
-      return NextResponse.json(newModel, { status: 201 });
+        if (!error && supabaseModel) {
+          return NextResponse.json(supabaseModel, { status: 201 });
+        }
+        if (error) {
+          console.error('Supabase insert error:', error);
+        }
+      } catch (supabaseError) {
+        console.error('Supabase insert error:', supabaseError);
+      }
     }
+
+    // Fall back to file system
+    models.push(newModel);
+    saveModels(models);
+    return NextResponse.json(newModel, { status: 201 });
   } catch (error) {
     console.error('Error creating model:', error);
     return NextResponse.json(

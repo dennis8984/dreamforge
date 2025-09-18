@@ -1,9 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Use empty strings as fallback to prevent build errors
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Only create client if credentials are available
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null as ReturnType<typeof createClient> | null;
+
+// Helper function to check if Supabase is configured
+export const isSupabaseConfigured = () => {
+  return !!(supabaseUrl && supabaseAnonKey);
+};
 
 // Database types
 export interface User {
@@ -44,6 +53,9 @@ export interface GeneratedImage {
 
 // Auth functions
 export const signUp = async (email: string, password: string, fullName?: string) => {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -57,6 +69,9 @@ export const signUp = async (email: string, password: string, fullName?: string)
 };
 
 export const signIn = async (email: string, password: string) => {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -65,12 +80,19 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
   const { error } = await supabase.auth.signOut();
   return { error };
 };
 
-// Database functions
+// Database functions - these require Supabase to be configured
+// Uncomment and use these functions when Supabase credentials are available
+/*
 export const getModels = async (category?: string) => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+
   let query = supabase
     .from('ai_models')
     .select('*')
@@ -85,6 +107,8 @@ export const getModels = async (category?: string) => {
 };
 
 export const getModelProfile = async (modelId: string) => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+
   const { data, error } = await supabase
     .from('ai_models')
     .select('*')
@@ -103,6 +127,8 @@ export const getModelProfile = async (modelId: string) => {
 };
 
 export const getUserGallery = async (userId: string) => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+
   const { data, error } = await supabase
     .from('generated_images')
     .select('*')
@@ -114,6 +140,8 @@ export const getUserGallery = async (userId: string) => {
 
 // Storage functions
 export const uploadImage = async (file: File, path: string) => {
+  if (!supabase) return { url: null, error: new Error('Supabase not configured') };
+
   const { data, error } = await supabase.storage
     .from('generated-images')
     .upload(path, file, {
@@ -133,9 +161,12 @@ export const uploadImage = async (file: File, path: string) => {
 };
 
 export const deleteImage = async (path: string) => {
+  if (!supabase) return { error: new Error('Supabase not configured') };
+
   const { error } = await supabase.storage
     .from('generated-images')
     .remove([path]);
 
   return { error };
 };
+*/

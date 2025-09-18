@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import AuthModal from './AuthModal';
+import { signOut } from '@/lib/supabase';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -14,8 +15,9 @@ export default function Header({ isAuthenticated, setIsAuthenticated, userTier }
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
+  const handleLogout = async () => {
+    await signOut();
+    localStorage.removeItem('supabase_user_id');
     setIsAuthenticated(false);
   };
 

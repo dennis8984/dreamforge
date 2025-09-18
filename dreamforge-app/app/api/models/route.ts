@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import fs from 'fs';
 import path from 'path';
 
@@ -125,25 +126,55 @@ function getModels() {
 }
 
 export async function GET(request: NextRequest) {
-  const models = getModels();
-  // Get query parameters
-  const searchParams = request.nextUrl.searchParams;
-  const category = searchParams.get('category');
-  const featured = searchParams.get('featured');
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const category = searchParams.get('category');
+    const featured = searchParams.get('featured');
 
-  let filteredModels = [...models];
+    // Try to get from Supabase first if configured
+    if (supabase) {
+      let query = supabase
+        .from('ai_models')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  // Filter by category
-  if (category && category !== 'all') {
-    filteredModels = filteredModels.filter(m => m.category === category);
+      if (category && category !== 'all') {
+        query = query.eq('category', category);
+      }
+
+      if (featured === 'true') {
+        query = query.eq('is_featured', true);
+      }
+
+      const { data, error } = await query;
+
+      if (!error && data) {
+        return NextResponse.json(data);
+      }
+      if (error) {
+        console.error('Supabase error:', error);
+      }
+    }
+
+    // Fall back to file system
+    const models = getModels();
+    let filteredModels = [...models];
+
+    if (category && category !== 'all') {
+      filteredModels = filteredModels.filter(m => m.category === category);
+    }
+
+    if (featured === 'true') {
+      filteredModels = filteredModels.filter(m => m.is_featured);
+    }
+
+    return NextResponse.json(filteredModels);
+  } catch (err) {
+    console.error('Error fetching models:', err);
+    // Fall back to file system
+    const models = getModels();
+    return NextResponse.json(models);
   }
-
-  // Filter by featured
-  if (featured === 'true') {
-    filteredModels = filteredModels.filter(m => m.is_featured);
-  }
-
-  return NextResponse.json(filteredModels);
 }
 
 export async function POST(request: NextRequest) {

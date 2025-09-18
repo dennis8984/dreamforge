@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AIGallery from '@/components/AIGallery';
 import GenerationPanel from '@/components/GenerationPanel';
 import Header from '@/components/Header';
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -24,23 +25,45 @@ export default function Home() {
   } | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      setIsAuthenticated(true);
-      fetchUserInfo();
+    checkAuth();
+
+    // Subscribe to auth changes if Supabase is configured
+    if (supabase) {
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsAuthenticated(!!session);
+        if (session?.user) {
+          fetchUserInfo(session.user.id);
+        }
+      });
+
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
     }
   }, []);
 
-  const fetchUserInfo = async () => {
+  const checkAuth = async () => {
+    if (!supabase) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+    if (session?.user) {
+      await fetchUserInfo(session.user.id);
+    }
+  };
+
+  const fetchUserInfo = async (userId: string) => {
+    if (!supabase) return;
+
     try {
-      const response = await fetch('http://localhost:8000/api/user/usage', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUserTier(data.current_tier);
+      const { data } = await supabase
+        .from('users')
+        .select('subscription_tier')
+        .eq('id', userId)
+        .single();
+
+      if (data) {
+        setUserTier(data.subscription_tier || 'free');
       }
     } catch (error) {
       console.error('Error fetching user info:', error);

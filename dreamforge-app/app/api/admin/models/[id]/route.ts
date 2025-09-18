@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import fs from 'fs';
 import path from 'path';
 
@@ -54,23 +55,46 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const models = getModels();
-    const modelIndex = models.findIndex((m: unknown) => (m as {id: string}).id === id);
 
-    if (modelIndex === -1) {
-      return NextResponse.json({ error: 'Model not found' }, { status: 404 });
+    // Try to update in Supabase first if configured
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('ai_models')
+          .update({
+            ...body,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (!error && data) {
+          return NextResponse.json(data);
+        }
+        if (error) {
+          console.error('Supabase update error:', error);
+        }
+      } catch (supabaseError) {
+        console.error('Supabase update error:', supabaseError);
+      }
     }
+      // Fall back to file system
+      const models = getModels();
+      const modelIndex = models.findIndex((m: unknown) => (m as {id: string}).id === id);
 
-    // Update model with provided fields
-    models[modelIndex] = {
-      ...models[modelIndex],
-      ...body,
-      updated_at: new Date().toISOString()
-    };
+      if (modelIndex === -1) {
+        return NextResponse.json({ error: 'Model not found' }, { status: 404 });
+      }
 
-    saveModels(models);
+      models[modelIndex] = {
+        ...models[modelIndex],
+        ...body,
+        updated_at: new Date().toISOString()
+      };
 
-    return NextResponse.json(models[modelIndex]);
+      saveModels(models);
+      return NextResponse.json(models[modelIndex]);
   } catch (error) {
     console.error('Error updating model:', error);
     return NextResponse.json(
@@ -91,16 +115,32 @@ export async function DELETE(
   }
 
   try {
-    const models = getModels();
-    const filteredModels = models.filter((m: unknown) => (m as {id: string}).id !== id);
+    // Try to delete from Supabase first if configured
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('ai_models')
+          .delete()
+          .eq('id', id);
 
-    if (models.length === filteredModels.length) {
-      return NextResponse.json({ error: 'Model not found' }, { status: 404 });
+        if (!error) {
+          return NextResponse.json({ success: true, message: 'Model deleted' });
+        }
+        console.error('Supabase delete error:', error);
+      } catch (supabaseError) {
+        console.error('Supabase delete error:', supabaseError);
+      }
     }
+      // Fall back to file system
+      const models = getModels();
+      const filteredModels = models.filter((m: unknown) => (m as {id: string}).id !== id);
 
-    saveModels(filteredModels);
+      if (models.length === filteredModels.length) {
+        return NextResponse.json({ error: 'Model not found' }, { status: 404 });
+      }
 
-    return NextResponse.json({ success: true, message: 'Model deleted' });
+      saveModels(filteredModels);
+      return NextResponse.json({ success: true, message: 'Model deleted' });
   } catch (error) {
     console.error('Error deleting model:', error);
     return NextResponse.json(
