@@ -69,11 +69,20 @@ export async function generateImageWithRunpod(
     apiKeyLength: RUNPOD_API_KEY.length
   });
 
-  if (!RUNPOD_API_KEY) {
-    console.error('No Runpod API key available. Set RUNPOD_API_KEY in Vercel environment variables.');
+  if (!RUNPOD_API_KEY || RUNPOD_API_KEY === 'your_runpod_api_key_here') {
+    console.error('='.repeat(80));
+    console.error('ERROR: Runpod API key not configured!');
+    console.error('The API key is still set to the placeholder value.');
+    console.error('');
+    console.error('To fix this:');
+    console.error('1. Get your API key from https://runpod.io');
+    console.error('2. For local dev: Update RUNPOD_API_KEY in .env.local');
+    console.error('3. For production: Set RUNPOD_API_KEY in Vercel environment variables');
+    console.error('4. See RUNPOD_SETUP.md for detailed instructions');
+    console.error('='.repeat(80));
     return {
       success: false,
-      error: 'Runpod API key not configured'
+      error: 'Runpod API key not configured. Please add your API key in Vercel environment variables. See RUNPOD_SETUP.md for instructions.'
     };
   }
 
@@ -111,11 +120,14 @@ export async function generateImageWithRunpod(
     }
   };
 
-  console.log('Sending to Runpod:', {
-    url: RUNPOD_API_URL,
-    promptLength: prompt.length,
-    promptPreview: prompt.substring(0, 100)
-  });
+  console.log('='.repeat(60));
+  console.log('📤 SENDING REQUEST TO RUNPOD');
+  console.log('='.repeat(60));
+  console.log('URL:', RUNPOD_API_URL);
+  console.log('API Key:', RUNPOD_API_KEY ? `${RUNPOD_API_KEY.substring(0, 10)}...` : 'NOT SET');
+  console.log('Prompt:', prompt.substring(0, 100) + '...');
+  console.log('Mode:', parameters.input_image ? 'Image-to-Image' : 'Text-to-Image');
+  console.log('='.repeat(60));
 
   try {
     const response = await fetch(RUNPOD_API_URL, {
@@ -134,11 +146,17 @@ export async function generateImageWithRunpod(
     }
 
     const result = await response.json();
-    console.log('Runpod response:', {
-      hasId: !!result.id,
-      status: result.status,
-      hasOutput: !!result.output
-    });
+    console.log('='.repeat(60));
+    console.log('✅ RUNPOD RESPONSE RECEIVED');
+    console.log('='.repeat(60));
+    console.log('Job ID:', result.id || 'No ID');
+    console.log('Status:', result.status || 'No status');
+    console.log('Has Output:', !!result.output);
+    if (result.error) {
+      console.error('Error from Runpod:', result.error);
+    }
+    console.log('Full response:', JSON.stringify(result, null, 2));
+    console.log('='.repeat(60));
 
     // Handle async job response
     if (result.id && result.status === 'IN_QUEUE') {
