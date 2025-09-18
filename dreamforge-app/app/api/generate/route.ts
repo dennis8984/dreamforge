@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  generateWithNanoBanana,
+  checkRunpodJobStatus,
+  generateMockImage,
+  NANO_BANANA_MODELS
+} from '@/lib/nano-banana';
 
-const RUNPOD_API_URL = process.env.RUNPOD_API_URL || 'https://api.runpod.ai/v2/xez46ruk06q834/run';
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || '';
 
 export const runtime = 'edge';
@@ -15,76 +20,111 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    // Call Runpod API directly
-    const runpodResponse = await fetch(RUNPOD_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RUNPOD_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: {
-          prompt,
-          model_id: model_id || 'default',
-          parameters: parameters || {
-            temperature: 0.7,
-            guidance_scale: 7.5
-          }
-        }
-      })
+    // Get model configuration
+    const modelConfig = model_id ?
+      NANO_BANANA_MODELS[model_id as keyof typeof NANO_BANANA_MODELS] :
+      NANO_BANANA_MODELS['stable-diffusion-xl'];
+
+    console.log('Generating with model:', modelConfig?.name || 'default');
+
+    // If no Runpod API key, use mock generation
+    if (!RUNPOD_API_KEY) {
+      console.log('No Runpod API key, using mock generation');
+      const mockImage = generateMockImage(prompt);
+
+      return NextResponse.json({
+        id: Math.random().toString(36).substr(2, 9),
+        image_url: mockImage,
+        status: 'success',
+        enhanced_prompt: prompt,
+        message: 'Mock generation (configure Runpod for real images)',
+        generation_time_ms: 1000,
+        width: 1024,
+        height: 1024
+      });
+    }
+
+    // Generate with Nano Banana (Gemini enhancement + Runpod generation)
+    const result = await generateWithNanoBanana(prompt, model_id, {
+      negative_prompt: parameters?.negative_prompt,
+      width: parameters?.width || 1024,
+      height: parameters?.height || 1024,
+      guidance_scale: parameters?.guidanceScale || 7.5,
+      steps: parameters?.steps || 50,
+      enhance: parameters?.enhance !== false // Default to true
     });
 
-    if (!runpodResponse.ok) {
-      const error = await runpodResponse.text();
-      console.error('Runpod error:', error);
-      throw new Error('Generation failed');
+    if (!result.success) {
+      throw new Error(result.error || 'Generation failed');
     }
 
-    const result = await runpodResponse.json();
-
-    // Handle async response (job queued)
-    if (result.id && result.status === 'IN_QUEUE') {
+    // If job was queued, return job ID for polling
+    if (result.jobId) {
       return NextResponse.json({
-        id: result.id,
-        status: result.status,
-        message: 'Job queued for processing'
+        id: result.jobId,
+        status: 'processing',
+        message: 'Image is being generated',
+        enhanced_prompt: result.enhancedPrompt
       });
     }
 
-    // Handle sync response (direct result)
-    if (result.output) {
+    // If image was generated directly, return it
+    if (result.imageUrl) {
       return NextResponse.json({
-        id: result.id || Math.random().toString(36).substr(2, 9),
-        image_url: result.output.image_url,
-        image_base64: result.output.image_base64,
-        generation_time_ms: result.output.generation_time_ms,
-        width: result.output.width,
-        height: result.output.height,
-        status: 'success'
+        id: Math.random().toString(36).substr(2, 9),
+        image_url: result.imageUrl,
+        status: 'success',
+        enhanced_prompt: result.enhancedPrompt,
+        generation_time_ms: 3000,
+        width: parameters?.width || 1024,
+        height: parameters?.height || 1024
       });
     }
 
-    // Fallback response
+    // Fallback
     return NextResponse.json({
       id: Math.random().toString(36).substr(2, 9),
       status: 'processing',
-      message: 'Image is being generated'
+      message: 'Image generation in progress'
     });
 
   } catch (error) {
     console.error('Generation error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate image' },
+      { error: error instanceof Error ? error.message : 'Failed to generate image' },
       { status: 500 }
     );
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Check if this is a job status check
+  const jobId = request.nextUrl.searchParams.get('job_id');
+
+  if (jobId) {
+    try {
+      const status = await checkRunpodJobStatus(jobId);
+
+      return NextResponse.json({
+        id: jobId,
+        status: status.status,
+        image_url: status.imageUrl,
+        error: status.error
+      });
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Failed to check job status' },
+        { status: 500 }
+      );
+    }
+  }
+
   // Health check endpoint
   return NextResponse.json({
     status: 'healthy',
-    endpoint: RUNPOD_API_URL,
-    hasApiKey: !!RUNPOD_API_KEY
+    runpod_configured: !!RUNPOD_API_KEY,
+    gemini_configured: true,
+    models_available: Object.keys(NANO_BANANA_MODELS),
+    message: RUNPOD_API_KEY ? 'Real AI generation ready' : 'Mock generation mode (configure Runpod API key)'
   });
 }

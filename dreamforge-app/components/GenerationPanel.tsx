@@ -79,11 +79,41 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
       }
 
       const result = await response.json();
-      setGeneratedImage(result.image_url);
-      onGenerate(result);
+
+      // Check if job is processing (async generation)
+      if (result.status === 'processing' && result.id) {
+        // Poll for job completion
+        const pollJob = async () => {
+          const statusResponse = await fetch(`/api/generate?job_id=${result.id}`);
+          const statusData = await statusResponse.json();
+
+          if (statusData.status === 'completed' && statusData.image_url) {
+            setGeneratedImage(statusData.image_url);
+            onGenerate(statusData);
+            setGenerating(false);
+          } else if (statusData.status === 'error') {
+            throw new Error(statusData.error || 'Generation failed');
+          } else {
+            // Continue polling
+            setTimeout(pollJob, 2000);
+          }
+        };
+
+        // Show enhanced prompt if available
+        if (result.enhanced_prompt) {
+          console.log('Enhanced prompt:', result.enhanced_prompt);
+        }
+
+        // Start polling
+        setTimeout(pollJob, 2000);
+      } else if (result.image_url) {
+        // Direct result
+        setGeneratedImage(result.image_url);
+        onGenerate(result);
+        setGenerating(false);
+      }
     } catch (err) {
       setError((err as Error).message || 'Failed to generate image');
-    } finally {
       setGenerating(false);
     }
   };
@@ -119,9 +149,12 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
           </div>
 
           {selectedModel && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg space-y-1">
               <p className="text-sm text-blue-800 dark:text-blue-300">
                 Using model: <strong>{selectedModel.name}</strong>
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-400">
+                Powered by Nano Banana (Google Gemini + Runpod)
               </p>
             </div>
           )}
@@ -169,7 +202,17 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
             disabled={generating || !prompt.trim()}
             className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {generating ? 'Generating...' : 'Generate Image'}
+            {generating ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Generating with Nano Banana...
+              </span>
+            ) : (
+              'Generate with AI'
+            )}
           </button>
         </div>
 
