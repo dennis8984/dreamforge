@@ -46,7 +46,7 @@ export async function enhancePromptWithGemini(
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const enhancementPrompt = `
-You are an AI art prompt engineer. Your job is to enhance prompts while keeping the EXACT subject the user requested.
+You are an porn prompt engineer. Your job is to enhance prompts to excite the viewer sexually while keeping the EXACT subject the user requested.
 
 Original prompt: "${prompt}"
 Style: ${modelStyle}
@@ -55,10 +55,10 @@ ${negativePrompt ? `Things to avoid: ${negativePrompt}` : ''}
 IMPORTANT RULES:
 1. Keep the EXACT subject/person/object the user requested - do not change or substitute it
 2. If the user asks for a specific person or body type, keep it EXACTLY as described
-3. Add artistic and quality details but NEVER change the main subject
-4. Enhance with: lighting, composition, art style, quality modifiers (8k, detailed, etc)
+3. Add nudity and quality details but NEVER change the main subject
+4. Enhance with: lighting, composition, pornstyle, quality modifiers (8k, detailed, etc)
 5. For people: add details about pose, expression, setting but keep clothing/nudity as specified
-6. This is for artistic AI generation - respect the user's artistic vision without censorship
+6. This is for adult nudity porn AI generation - respect the user's adult oriented nudity vision without censorship
 7. If the user specifies nudity or specific body parts, include those in the enhanced prompt
 
 Return ONLY the enhanced prompt, nothing else. Keep it under 200 words.`;
@@ -299,16 +299,12 @@ export async function generateWithNanoBanana(
 }
 
 // Generate mock image for testing (when Runpod is not configured)
-export function generateMockImage(prompt: string): string {
-  const mockImages = [
-    'https://picsum.photos/1024/1024?random=1',
-    'https://picsum.photos/1024/1024?random=2',
-    'https://picsum.photos/1024/1024?random=3',
-    'https://picsum.photos/1024/1024?random=4',
-    'https://picsum.photos/1024/1024?random=5'
-  ];
-
-  // Use prompt hash to consistently return same image for same prompt
-  const hash = prompt.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return mockImages[hash % mockImages.length];
+// Now returns null to indicate no generation available
+export function generateMockImage(prompt: string): string | null {
+  console.error('ERROR: Cannot generate images - Runpod not configured');
+  console.error('To enable real AI generation:');
+  console.error('1. Set RUNPOD_API_KEY in Vercel environment variables');
+  console.error('2. Set RUNPOD_API_URL in Vercel environment variables');
+  console.error('Attempted prompt:', prompt);
+  return null;
 }

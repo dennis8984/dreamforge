@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   generateWithNanoBanana,
   checkRunpodJobStatus,
-  generateMockImage,
   NANO_BANANA_MODELS
 } from '@/lib/nano-banana';
 
@@ -33,22 +32,16 @@ export async function POST(request: NextRequest) {
       isRawPrompt: prompt.toLowerCase().startsWith('raw:')
     });
 
-    // If no Runpod API key, use mock generation
+    // If no Runpod API key, return error
     if (!RUNPOD_API_KEY || RUNPOD_API_KEY === '') {
-      console.log('No Runpod API key found, using mock generation');
-      console.log('Set RUNPOD_API_KEY in Vercel environment variables for real generation');
-      const mockImage = generateMockImage(prompt);
+      console.error('No Runpod API key found - cannot generate images');
+      console.error('Set RUNPOD_API_KEY in Vercel environment variables for real generation');
 
       return NextResponse.json({
-        id: Math.random().toString(36).substr(2, 9),
-        image_url: mockImage,
-        status: 'success',
-        enhanced_prompt: prompt,
-        message: 'Mock generation (configure Runpod for real images)',
-        generation_time_ms: 1000,
-        width: 1024,
-        height: 1024
-      });
+        error: 'AI generation not configured. Please set RUNPOD_API_KEY and RUNPOD_API_URL in environment variables.',
+        status: 'error',
+        message: 'Runpod API credentials required for image generation'
+      }, { status: 503 });
     }
 
     // Check if prompt starts with "raw:" to bypass enhancement
@@ -131,11 +124,16 @@ export async function GET(request: NextRequest) {
   }
 
   // Health check endpoint
+  const isConfigured = !!RUNPOD_API_KEY && RUNPOD_API_KEY.length > 0;
+
   return NextResponse.json({
-    status: 'healthy',
-    runpod_configured: !!RUNPOD_API_KEY,
+    status: isConfigured ? 'ready' : 'not_configured',
+    runpod_configured: isConfigured,
     gemini_configured: true,
-    models_available: Object.keys(NANO_BANANA_MODELS),
-    message: RUNPOD_API_KEY ? 'Real AI generation ready' : 'Mock generation mode (configure Runpod API key)'
+    models_available: isConfigured ? Object.keys(NANO_BANANA_MODELS) : [],
+    message: isConfigured ?
+      'Real AI generation ready' :
+      'ERROR: Runpod not configured. Set RUNPOD_API_KEY and RUNPOD_API_URL in Vercel environment variables.',
+    configuration_required: !isConfigured
   });
 }
