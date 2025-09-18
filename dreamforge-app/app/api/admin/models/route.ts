@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
         styles: [],
         speed: 'fast'
       },
+      file_path: body.file_path || `models/${modelId}.safetensors`,
       created_at: new Date().toISOString()
     };
 
@@ -178,7 +179,8 @@ export async function POST(request: NextRequest) {
               view_count: newModel.view_count,
               like_count: newModel.like_count,
               nano_banana_model: newModel.nano_banana_model,
-              tags: newModel.capabilities.styles || []
+              tags: newModel.capabilities.styles || [],
+              file_path: `models/${newModel.id}.safetensors`
             }
           ])
           .select()
