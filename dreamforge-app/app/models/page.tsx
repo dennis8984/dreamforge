@@ -20,20 +20,12 @@ interface Model {
 
 export default function ModelsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userTier, setUserTier] = useState('free');
+  const [userTier] = useState('free');
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [showPaywall, setShowPaywall] = useState(false);
   const [blockedModel, setBlockedModel] = useState<Model | null>(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-    loadModels();
-  }, [filter]);
 
   const loadModels = async () => {
     setLoading(true);
@@ -47,13 +39,23 @@ export default function ModelsPage() {
         // Use mock data if API is not available
         setModels(getMockModels());
       }
-    } catch (error) {
+    } catch {
       console.log('Using mock data for models');
       setModels(getMockModels());
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+    loadModels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
 
   const getMockModels = (): Model[] => [
     {

@@ -35,10 +35,10 @@ export default function AIGallery({ userTier, onModelSelect }: AIGalleryProps) {
 
   const fetchModels = async () => {
     setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filter !== 'all') params.append('category', filter);
+    const params = new URLSearchParams();
+    if (filter !== 'all') params.append('category', filter);
 
+    try {
       // Try local API first, fallback to backend
       const response = await fetch(`/api/models?${params}`);
       const data = await response.json();
@@ -50,7 +50,7 @@ export default function AIGallery({ userTier, onModelSelect }: AIGalleryProps) {
         const backendResponse = await fetch(`http://localhost:8000/api/models?${params}`);
         const backendData = await backendResponse.json();
         setModels(backendData);
-      } catch (backendError) {
+      } catch {
         console.error('Using fallback model data');
       }
     } finally {

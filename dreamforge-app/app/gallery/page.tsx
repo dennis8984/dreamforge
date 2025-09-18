@@ -15,7 +15,7 @@ interface GeneratedImage {
 
 export default function GalleryPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userTier, setUserTier] = useState('free');
+  const [userTier] = useState('free');
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [filter, setFilter] = useState('all');
 
