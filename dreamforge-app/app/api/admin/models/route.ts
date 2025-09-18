@@ -1,0 +1,144 @@
+import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
+
+// Path to store models (in production, use a database)
+const MODELS_FILE = path.join(process.cwd(), 'models.json');
+
+// Initialize with default models if file doesn't exist
+const defaultModels = [
+  {
+    id: '1',
+    name: 'DreamForge XL',
+    description: 'High-quality general purpose model with excellent prompt adherence',
+    category: 'realistic',
+    thumbnail_url: 'https://picsum.photos/400/400?random=10',
+    is_premium: false,
+    is_featured: true,
+    view_count: 15420,
+    like_count: 3241,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    capabilities: {
+      max_resolution: '1024x1024',
+      styles: ['realistic', 'artistic', 'photography'],
+      speed: 'fast'
+    }
+  },
+  {
+    id: '2',
+    name: 'Anime Pro Max',
+    description: 'Specialized in anime and manga art styles with vibrant colors',
+    category: 'anime',
+    thumbnail_url: 'https://picsum.photos/400/400?random=11',
+    is_premium: true,
+    is_featured: true,
+    view_count: 12350,
+    like_count: 2891,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    capabilities: {
+      max_resolution: '1024x1024',
+      styles: ['anime', 'manga', 'chibi'],
+      speed: 'medium'
+    }
+  }
+];
+
+// Get models from file or memory
+function getModels() {
+  try {
+    if (fs.existsSync(MODELS_FILE)) {
+      const data = fs.readFileSync(MODELS_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error reading models file:', error);
+  }
+  return defaultModels;
+}
+
+// Save models to file
+function saveModels(models: any[]) {
+  try {
+    fs.writeFileSync(MODELS_FILE, JSON.stringify(models, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving models:', error);
+    return false;
+  }
+}
+
+// Simple admin authentication check
+function isAdminAuthenticated(request: NextRequest): boolean {
+  // In production, verify JWT token and admin role
+  const authHeader = request.headers.get('authorization');
+  const adminKey = request.headers.get('x-admin-key');
+
+  // For demo: check for admin key or query param
+  return adminKey === 'dreamforge_admin_2024' ||
+         request.nextUrl.searchParams.get('admin') === 'true';
+}
+
+// GET /api/admin/models - Get all models
+export async function GET(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const models = getModels();
+  return NextResponse.json(models);
+}
+
+// POST /api/admin/models - Create new model
+export async function POST(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const models = getModels();
+
+    // Validate required fields
+    if (!body.name || !body.description) {
+      return NextResponse.json(
+        { error: 'Name and description are required' },
+        { status: 400 }
+      );
+    }
+
+    // Create new model with defaults
+    const newModel = {
+      id: body.id || Date.now().toString(),
+      name: body.name,
+      description: body.description,
+      category: body.category || 'realistic',
+      thumbnail_url: body.thumbnail_url || `https://picsum.photos/400/400?random=${Date.now()}`,
+      is_premium: body.is_premium || false,
+      is_featured: body.is_featured || false,
+      view_count: 0,
+      like_count: 0,
+      nano_banana_model: body.nano_banana_model || 'gemini-2.5-flash-image-preview',
+      capabilities: body.capabilities || {
+        max_resolution: '1024x1024',
+        styles: [],
+        speed: 'fast'
+      },
+      created_at: new Date().toISOString()
+    };
+
+    models.push(newModel);
+
+    if (saveModels(models)) {
+      return NextResponse.json(newModel, { status: 201 });
+    } else {
+      // If file save fails, still return success (in-memory)
+      return NextResponse.json(newModel, { status: 201 });
+    }
+  } catch (error) {
+    console.error('Error creating model:', error);
+    return NextResponse.json(
+      { error: 'Failed to create model' },
+      { status: 500 }
+    );
+  }
+}

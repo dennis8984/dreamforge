@@ -44,6 +44,11 @@ export default function Header({ isAuthenticated, setIsAuthenticated, userTier }
               <Link href="/pricing" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Pricing
               </Link>
+              {userTier === 'admin' && (
+                <Link href="/admin" className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-medium">
+                  Admin
+                </Link>
+              )}
 
               {isAuthenticated ? (
                 <>

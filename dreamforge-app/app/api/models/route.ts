@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-// Mock models data with Nano Banana integration
-const models = [
+// Path to models file
+const MODELS_FILE = path.join(process.cwd(), 'models.json');
+
+// Default models if file doesn't exist
+const defaultModels = [
   {
     id: '1',
     name: 'DreamForge XL',
@@ -106,7 +111,21 @@ const models = [
   }
 ];
 
+// Get models from file or use defaults
+function getModels() {
+  try {
+    if (fs.existsSync(MODELS_FILE)) {
+      const data = fs.readFileSync(MODELS_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error reading models file:', error);
+  }
+  return defaultModels;
+}
+
 export async function GET(request: NextRequest) {
+  const models = getModels();
   // Get query parameters
   const searchParams = request.nextUrl.searchParams;
   const category = searchParams.get('category');
