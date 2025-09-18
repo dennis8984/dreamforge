@@ -95,27 +95,20 @@ export async function generateImageWithRunpod(
     };
   }
 
+  // Simplified request body for SDXL on Runpod
   const requestBody = {
     input: {
-      prompt,
+      prompt: prompt,
       negative_prompt: parameters.negative_prompt || '',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
+      num_inference_steps: parameters.num_inference_steps || 30,
       guidance_scale: parameters.guidance_scale || 7.5,
-      num_inference_steps: parameters.num_inference_steps || 50,
       seed: parameters.seed && parameters.seed !== -1 ? parameters.seed : Math.floor(Math.random() * 1000000),
-      scheduler: parameters.scheduler || 'DPMSolverMultistepScheduler',
-      num_images: 1,
-      // Additional SDXL parameters for better quality
-      cfg_scale: parameters.guidance_scale || 7.5,
-      sampler_name: parameters.sampler || 'DPMSolverMultistepScheduler',
-      clip_skip: 1,
-      karras: true,
       // Image-to-image parameters
       ...(parameters.input_image ? {
         init_image: parameters.input_image,
-        strength: parameters.strength || 0.75, // How much to transform the image
-        denoising_strength: parameters.strength || 0.75
+        strength: parameters.strength || 0.75
       } : {})
     }
   };
@@ -194,7 +187,11 @@ export async function checkRunpodJobStatus(jobId: string): Promise<{
   error?: string;
 }> {
   try {
-    const response = await fetch(`https://api.runpod.ai/v2/xez46ruk06q834/status/${jobId}`, {
+    // Extract endpoint ID from the API URL
+    const endpointId = RUNPOD_API_URL.match(/\/v2\/([^\/]+)\/run/)?.[1] || 'ga8coh1zc01r57';
+    const statusUrl = `https://api.runpod.ai/v2/${endpointId}/status/${jobId}`;
+
+    const response = await fetch(statusUrl, {
       headers: {
         'Authorization': `Bearer ${RUNPOD_API_KEY}`,
       }
@@ -205,16 +202,30 @@ export async function checkRunpodJobStatus(jobId: string): Promise<{
     }
 
     const result = await response.json();
+    console.log('Job status check result:', JSON.stringify(result, null, 2));
 
     if (result.status === 'COMPLETED' && result.output) {
+      // Handle different output formats from Runpod
+      let imageUrl = null;
+
+      if (typeof result.output === 'string') {
+        imageUrl = result.output;
+      } else if (Array.isArray(result.output) && result.output.length > 0) {
+        imageUrl = result.output[0];
+      } else if (result.output.image_url) {
+        imageUrl = result.output.image_url;
+      } else if (result.output.images && Array.isArray(result.output.images)) {
+        imageUrl = result.output.images[0];
+      }
+
       return {
         status: 'completed',
-        imageUrl: result.output.image_url || result.output[0]
+        imageUrl: imageUrl
       };
     }
 
     return {
-      status: result.status.toLowerCase(),
+      status: result.status ? result.status.toLowerCase() : 'processing',
       error: result.error
     };
   } catch (error) {
