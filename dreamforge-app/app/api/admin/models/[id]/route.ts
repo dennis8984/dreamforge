@@ -33,8 +33,13 @@ function saveModels(models: unknown[]) {
 function isAdminAuthenticated(request: NextRequest): boolean {
   const adminKey = request.headers.get('x-admin-key');
 
+  // Also check referrer for admin page access
+  const referrer = request.headers.get('referer');
+  const isFromAdmin = referrer?.includes('admin=true');
+
   return adminKey === 'dreamforge_admin_2024' ||
-         request.nextUrl.searchParams.get('admin') === 'true';
+         request.nextUrl.searchParams.get('admin') === 'true' ||
+         isFromAdmin === true;
 }
 
 // PATCH /api/admin/models/[id] - Update model

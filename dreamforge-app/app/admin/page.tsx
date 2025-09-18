@@ -50,7 +50,9 @@ export default function AdminDashboard() {
       const adminKey = localStorage.getItem('admin_key');
 
       // Simple admin check - in production, verify with backend
-      if (token && (adminKey === 'dreamforge_admin_2024' || window.location.search.includes('admin=true'))) {
+      // Allow access with query parameter for demo or with token + admin key
+      if (window.location.search.includes('admin=true') ||
+          (token && adminKey === 'dreamforge_admin_2024')) {
         setIsAuthenticated(true);
         setIsAdmin(true);
       } else {

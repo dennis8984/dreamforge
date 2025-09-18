@@ -73,8 +73,13 @@ function isAdminAuthenticated(request: NextRequest): boolean {
   const adminKey = request.headers.get('x-admin-key');
 
   // For demo: check for admin key or query param
+  // Also check referrer for admin page access
+  const referrer = request.headers.get('referer');
+  const isFromAdmin = referrer?.includes('admin=true');
+
   return adminKey === 'dreamforge_admin_2024' ||
-         request.nextUrl.searchParams.get('admin') === 'true';
+         request.nextUrl.searchParams.get('admin') === 'true' ||
+         isFromAdmin === true;
 }
 
 // GET /api/admin/models - Get all models
