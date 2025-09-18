@@ -136,7 +136,13 @@ export const GENERATION_PRESETS: Record<string, GenerationPreset> = {
 export function applyPreset(preset: GenerationPreset, currentPrompt: string): {
   prompt: string;
   negativePrompt: string;
-  parameters: any;
+  parameters: {
+    guidanceScale: number;
+    steps: number;
+    width: number;
+    height: number;
+    sampler: string;
+  };
 } {
   let enhancedPrompt = currentPrompt;
 

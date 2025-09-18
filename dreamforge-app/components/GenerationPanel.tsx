@@ -287,7 +287,7 @@ export default function GenerationPanel({ selectedModel, onGenerate }: Generatio
             </div>
 
             <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-800 dark:text-amber-300">
-              <strong>Pro tip:</strong> Start prompt with "raw:" to bypass enhancement, or uncheck enhance above.
+              <strong>Pro tip:</strong> Start prompt with &quot;raw:&quot; to bypass enhancement, or uncheck enhance above.
             </div>
           </div>
 
