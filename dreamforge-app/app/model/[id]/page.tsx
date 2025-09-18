@@ -13,10 +13,16 @@ interface Model {
   category: string;
   thumbnail_url: string;
   is_premium: boolean;
-  personality?: string;
-  interests?: string[];
-  teaser_images?: string[];
-  chat_greeting?: string;
+  is_featured?: boolean;
+  generation_mode?: 'text-to-image' | 'image-to-image' | 'both';
+  sample_prompts?: string[];
+  negative_prompt?: string;
+  generated_images?: string[];
+  capabilities?: {
+    max_resolution: string;
+    styles: string[];
+    speed: string;
+  };
 }
 
 interface ChatMessage {
@@ -45,39 +51,49 @@ export default function ModelProfilePage() {
   const loadModel = async () => {
     setLoading(true);
     try {
-      // In production, this would fetch from API
-      // For now, using mock data
-      const mockModel: Model = {
-        id: modelId,
-        name: getModelName(modelId),
-        description: 'An advanced AI model with unique personality and creative capabilities',
-        category: 'artistic',
-        thumbnail_url: `https://picsum.photos/400/400?random=${modelId}`,
-        is_premium: ['2', '3', '5', '8'].includes(modelId),
-        personality: 'Creative, friendly, and imaginative. Loves to help bring your artistic visions to life!',
-        interests: ['Art', 'Photography', 'Fashion', 'Design', 'Creative Writing'],
-        teaser_images: [
-          `https://picsum.photos/400/600?random=${modelId}1`,
-          `https://picsum.photos/400/600?random=${modelId}2`,
-          `https://picsum.photos/400/600?random=${modelId}3`,
-          `https://picsum.photos/400/600?random=${modelId}4`,
-          `https://picsum.photos/400/600?random=${modelId}5`,
-          `https://picsum.photos/400/600?random=${modelId}6`
-        ],
-        chat_greeting: `Hi there! I'm ${getModelName(modelId)}. I'm here to help you create amazing artwork and bring your creative ideas to life. What would you like to create today?`
-      };
+      // Fetch real model from API
+      const response = await fetch(`/api/models?id=${modelId}`);
+      if (response.ok) {
+        const models = await response.json();
+        const model = models.find((m: Model) => m.id === modelId);
 
-      setModel(mockModel);
+        if (model) {
+          setModel(model);
+          // Add greeting message based on model type
+          const greeting = model.generation_mode === 'image-to-image'
+            ? `Hi! I'm ${model.name}. Upload an image and I'll transform it into something amazing!`
+            : `Hi! I'm ${model.name}. I specialize in creating ${model.category} content. What would you like me to generate today?`;
 
-      // Add greeting message
-      setMessages([{
-        id: '1',
-        role: 'assistant',
-        content: mockModel.chat_greeting || 'Hello! How can I help you today?',
-        timestamp: new Date()
-      }]);
-    } catch {
-      console.error('Error loading model');
+          setMessages([{
+            id: '1',
+            role: 'assistant',
+            content: greeting,
+            timestamp: new Date()
+          }]);
+        } else {
+          // If model not found in API, try admin endpoint
+          const adminResponse = await fetch(`/api/admin/models?admin=true`);
+          if (adminResponse.ok) {
+            const adminModels = await adminResponse.json();
+            const adminModel = adminModels.find((m: Model) => m.id === modelId);
+            if (adminModel) {
+              setModel(adminModel);
+              const greeting = adminModel.generation_mode === 'image-to-image'
+                ? `Hi! I'm ${adminModel.name}. Upload an image and I'll transform it into something amazing!`
+                : `Hi! I'm ${adminModel.name}. I specialize in creating ${adminModel.category} content. What would you like me to generate today?`;
+
+              setMessages([{
+                id: '1',
+                role: 'assistant',
+                content: greeting,
+                timestamp: new Date()
+              }]);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading model:', error);
     } finally {
       setLoading(false);
     }
@@ -101,19 +117,6 @@ export default function ModelProfilePage() {
   };
 
 
-  const getModelName = (id: string): string => {
-    const names: { [key: string]: string } = {
-      '1': 'DreamForge XL',
-      '2': 'Anime Pro Max',
-      '3': 'Photorealistic Vision',
-      '4': 'Abstract Dreams',
-      '5': '3D Render Pro',
-      '6': 'Fantasy Worlds',
-      '7': 'Pixel Art Master',
-      '8': 'Sci-Fi Generator'
-    };
-    return names[id] || 'AI Model';
-  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -233,23 +236,44 @@ export default function ModelProfilePage() {
                 {model.description}
               </p>
 
-              {model.personality && (
+              {model.generation_mode && (
                 <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Personality</h3>
-                  <p className="text-gray-600 dark:text-gray-400">{model.personality}</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Generation Mode</h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {model.generation_mode === 'both' ? 'Text to Image & Image to Image' :
+                     model.generation_mode === 'image-to-image' ? 'Image to Image' : 'Text to Image'}
+                  </p>
                 </div>
               )}
 
-              {model.interests && (
+              {model.capabilities?.styles && model.capabilities.styles.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Interests</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Styles</h3>
                   <div className="flex flex-wrap gap-2">
-                    {model.interests.map((interest, idx) => (
+                    {model.capabilities.styles.map((style, idx) => (
                       <span
                         key={idx}
                         className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full text-sm"
                       >
-                        {interest}
+                        {style}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {model.sample_prompts && model.sample_prompts.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Sample Prompts</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {model.sample_prompts.slice(0, 3).map((prompt, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded-full text-sm cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-800"
+                        onClick={() => navigator.clipboard.writeText(prompt)}
+                        title="Click to copy"
+                      >
+                        {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
                       </span>
                     ))}
                   </div>
@@ -302,23 +326,35 @@ export default function ModelProfilePage() {
           {activeTab === 'gallery' ? (
             <div className="p-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Sample Creations
+                Generated Images
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {model.teaser_images?.map((image, idx) => (
-                  <div key={idx} className="relative aspect-[2/3] rounded-lg overflow-hidden group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={image}
-                      alt={`Sample ${idx + 1}`}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                      <span className="text-white text-sm">Sample {idx + 1}</span>
+              {model.generated_images && model.generated_images.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {model.generated_images.map((image, idx) => (
+                    <div key={idx} className="relative aspect-[2/3] rounded-lg overflow-hidden group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={image}
+                        alt={`Generated ${idx + 1}`}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                        <span className="text-white text-sm">Generated {idx + 1}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                  <p className="mb-4">No generated images yet for this model.</p>
+                  <Link
+                    href={`/admin?admin=true`}
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Go to Admin to generate images
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col h-[600px]">

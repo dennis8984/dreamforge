@@ -13,6 +13,10 @@ interface Model {
   is_premium: boolean;
   is_featured: boolean;
   nano_banana_model: string;
+  generation_mode: 'text-to-image' | 'image-to-image' | 'both';
+  sample_prompts?: string[];
+  negative_prompt?: string;
+  generated_images?: string[];
   capabilities?: {
     max_resolution: string;
     styles: string[];
@@ -37,11 +41,18 @@ export default function AdminDashboard() {
     thumbnail_url: '',
     is_premium: false,
     is_featured: false,
-    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    nano_banana_model: 'stable-diffusion-xl',
+    generation_mode: 'both' as 'text-to-image' | 'image-to-image' | 'both',
     max_resolution: '1024x1024',
     styles: [] as string[],
-    speed: 'fast'
+    speed: 'fast',
+    sample_prompts: [] as string[],
+    negative_prompt: '',
+    generated_images: [] as string[]
   });
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [currentPrompt, setCurrentPrompt] = useState('');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAdminAuth = () => {
@@ -113,11 +124,17 @@ export default function AdminDashboard() {
           thumbnail_url: '',
           is_premium: false,
           is_featured: false,
-          nano_banana_model: 'gemini-2.5-flash-image-preview',
+          nano_banana_model: 'stable-diffusion-xl',
+          generation_mode: 'both',
           max_resolution: '1024x1024',
           styles: [],
-          speed: 'fast'
+          speed: 'fast',
+          sample_prompts: [],
+          negative_prompt: '',
+          generated_images: []
         });
+        setUploadedImage(null);
+        setCurrentPrompt('');
         setActiveTab('models');
         alert('Model created successfully!');
       }
@@ -195,6 +212,89 @@ export default function AdminDashboard() {
 
   const removeStyle = (style: string) => {
     setNewModel({ ...newModel, styles: newModel.styles.filter(s => s !== style) });
+  };
+
+  const addSamplePrompt = (prompt: string) => {
+    if (prompt && !newModel.sample_prompts.includes(prompt)) {
+      setNewModel({ ...newModel, sample_prompts: [...newModel.sample_prompts, prompt] });
+    }
+  };
+
+  const removeSamplePrompt = (prompt: string) => {
+    setNewModel({ ...newModel, sample_prompts: newModel.sample_prompts.filter(p => p !== prompt) });
+  };
+
+  const generateImage = async (useImageToImage = false) => {
+    if (!currentPrompt.trim() && !useImageToImage) return;
+
+    setGeneratingImage(true);
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: currentPrompt || 'beautiful sexy nude model, professional photography, studio lighting, high quality',
+          model_id: 'stable-diffusion-xl',
+          parameters: {
+            negative_prompt: newModel.negative_prompt || 'clothes, clothing, dressed, covered, censored, child, minor',
+            width: 1024,
+            height: 1024,
+            steps: 30,
+            guidance_scale: 7.5,
+            enhance: false
+          },
+          ...(useImageToImage && uploadedImage ? { input_image: uploadedImage } : {})
+        })
+      });
+
+      const result = await response.json();
+
+      // Poll for completion if job is processing
+      if (result.status === 'processing' && result.id) {
+        const pollJob = async () => {
+          const statusResponse = await fetch(`/api/generate?job_id=${result.id}`);
+          const statusData = await statusResponse.json();
+
+          if (statusData.status === 'completed' && statusData.image_url) {
+            // Add to generated images
+            setNewModel(prev => ({
+              ...prev,
+              generated_images: [...prev.generated_images, statusData.image_url],
+              thumbnail_url: prev.thumbnail_url || statusData.image_url
+            }));
+            setGeneratingImage(false);
+          } else if (statusData.status === 'error') {
+            alert('Generation failed: ' + (statusData.error || 'Unknown error'));
+            setGeneratingImage(false);
+          } else {
+            setTimeout(pollJob, 2000);
+          }
+        };
+        setTimeout(pollJob, 2000);
+      } else if (result.image_url) {
+        setNewModel(prev => ({
+          ...prev,
+          generated_images: [...prev.generated_images, result.image_url],
+          thumbnail_url: prev.thumbnail_url || result.image_url
+        }));
+        setGeneratingImage(false);
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      alert('Failed to generate image');
+      setGeneratingImage(false);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   if (!isAdmin) {
@@ -284,7 +384,8 @@ export default function AdminDashboard() {
                         <th className="text-left py-3 px-4">Category</th>
                         <th className="text-left py-3 px-4">Premium</th>
                         <th className="text-left py-3 px-4">Featured</th>
-                        <th className="text-left py-3 px-4">Nano Banana Model</th>
+                        <th className="text-left py-3 px-4">Model Type</th>
+                        <th className="text-left py-3 px-4">Mode</th>
                         <th className="text-left py-3 px-4">Actions</th>
                       </tr>
                     </thead>
@@ -319,6 +420,7 @@ export default function AdminDashboard() {
                             </button>
                           </td>
                           <td className="py-3 px-4 text-sm">{model.nano_banana_model}</td>
+                          <td className="py-3 px-4 text-sm">{model.generation_mode || 'text-to-image'}</td>
                           <td className="py-3 px-4">
                             <button
                               onClick={() => router.push(`/model/${model.id}`)}
@@ -410,16 +512,16 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nano Banana Model
+                      Generation Mode
                     </label>
                     <select
-                      value={newModel.nano_banana_model}
-                      onChange={(e) => setNewModel({ ...newModel, nano_banana_model: e.target.value })}
+                      value={newModel.generation_mode}
+                      onChange={(e) => setNewModel({ ...newModel, generation_mode: e.target.value as 'text-to-image' | 'image-to-image' | 'both' })}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
-                      <option value="gemini-2.5-flash-image-preview">Gemini 2.5 Flash (Preview)</option>
-                      <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
-                      <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                      <option value="text-to-image">Text to Image</option>
+                      <option value="image-to-image">Image to Image</option>
+                      <option value="both">Both</option>
                     </select>
                   </div>
 
@@ -487,6 +589,143 @@ export default function AdminDashboard() {
                           </button>
                         </span>
                       ))}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Negative Prompt (for NSFW generation)
+                    </label>
+                    <textarea
+                      value={newModel.negative_prompt}
+                      onChange={(e) => setNewModel({ ...newModel, negative_prompt: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      rows={2}
+                      placeholder="clothes, clothing, dressed, covered, censored, child, minor"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Leave empty for default NSFW negative prompts
+                    </p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Sample Prompts
+                    </label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        placeholder="Add sample prompt for this model..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addSamplePrompt((e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {newModel.sample_prompts.map((prompt) => (
+                        <span
+                          key={prompt}
+                          className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded-full text-sm flex items-center"
+                        >
+                          {prompt}
+                          <button
+                            type="button"
+                            onClick={() => removeSamplePrompt(prompt)}
+                            className="ml-2 text-purple-800 dark:text-purple-200"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Generate Images for Model
+                    </label>
+                    <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                          Text to Image
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={currentPrompt}
+                            onChange={(e) => setCurrentPrompt(e.target.value)}
+                            placeholder="beautiful sexy nude model, professional photography..."
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => generateImage(false)}
+                            disabled={generatingImage || !currentPrompt.trim()}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {generatingImage ? 'Generating...' : 'Generate'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {(newModel.generation_mode === 'image-to-image' || newModel.generation_mode === 'both') && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                            Image to Image
+                          </label>
+                          <div className="space-y-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                            />
+                            {uploadedImage && (
+                              <div className="flex items-center gap-4">
+                                <img src={uploadedImage} alt="Uploaded" className="w-20 h-20 object-cover rounded" />
+                                <button
+                                  type="button"
+                                  onClick={() => generateImage(true)}
+                                  disabled={generatingImage}
+                                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {generatingImage ? 'Generating...' : 'Generate from Image'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {newModel.generated_images.length > 0 && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                            Generated Images ({newModel.generated_images.length})
+                          </label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {newModel.generated_images.map((img, idx) => (
+                              <div key={idx} className="relative group">
+                                <img src={img} alt={`Generated ${idx}`} className="w-full h-24 object-cover rounded" />
+                                <button
+                                  type="button"
+                                  onClick={() => setNewModel(prev => ({
+                                    ...prev,
+                                    thumbnail_url: img
+                                  }))}
+                                  className="absolute top-1 right-1 px-2 py-1 bg-green-500 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  Set as Thumbnail
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

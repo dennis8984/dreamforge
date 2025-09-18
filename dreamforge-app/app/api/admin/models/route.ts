@@ -11,36 +11,27 @@ const MODELS_FILE = path.join(process.cwd(), 'models.json');
 const defaultModels = [
   {
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    name: 'DreamForge XL',
-    description: 'High-quality general purpose model with excellent prompt adherence',
+    name: 'NSFW Photo Model',
+    description: 'Professional nude photography model for artistic and adult content',
     category: 'realistic',
-    thumbnail_url: 'https://picsum.photos/400/400?random=10',
+    thumbnail_url: '',
     is_premium: false,
     is_featured: true,
-    view_count: 15420,
-    like_count: 3241,
-    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    view_count: 0,
+    like_count: 0,
+    nano_banana_model: 'stable-diffusion-xl',
+    generation_mode: 'both',
+    sample_prompts: [
+      'beautiful nude model, professional photography, studio lighting',
+      'sexy woman, artistic nude, high quality photography',
+      'nude fashion model, professional photoshoot, 8k quality'
+    ],
+    negative_prompt: 'child, minor, underage, clothes, clothing, dressed',
+    generated_images: [],
     capabilities: {
       max_resolution: '1024x1024',
-      styles: ['realistic', 'artistic', 'photography'],
+      styles: ['realistic', 'artistic', 'photography', 'nude', 'nsfw'],
       speed: 'fast'
-    }
-  },
-  {
-    id: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
-    name: 'Anime Pro Max',
-    description: 'Specialized in anime and manga art styles with vibrant colors',
-    category: 'anime',
-    thumbnail_url: 'https://picsum.photos/400/400?random=11',
-    is_premium: true,
-    is_featured: true,
-    view_count: 12350,
-    like_count: 2891,
-    nano_banana_model: 'gemini-2.5-flash-image-preview',
-    capabilities: {
-      max_resolution: '1024x1024',
-      styles: ['anime', 'manga', 'chibi'],
-      speed: 'medium'
     }
   }
 ];
@@ -147,12 +138,16 @@ export async function POST(request: NextRequest) {
       name: body.name,
       description: body.description,
       category: body.category || 'realistic',
-      thumbnail_url: body.thumbnail_url || `https://picsum.photos/400/400?random=${Date.now()}`,
+      thumbnail_url: body.thumbnail_url || '',
       is_premium: body.is_premium || false,
       is_featured: body.is_featured || false,
       view_count: 0,
       like_count: 0,
-      nano_banana_model: body.nano_banana_model || 'gemini-2.5-flash-image-preview',
+      nano_banana_model: body.nano_banana_model || 'stable-diffusion-xl',
+      generation_mode: body.generation_mode || 'both',
+      sample_prompts: body.sample_prompts || [],
+      negative_prompt: body.negative_prompt || 'child, minor, underage',
+      generated_images: body.generated_images || [],
       capabilities: body.capabilities || {
         max_resolution: '1024x1024',
         styles: [],

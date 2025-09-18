@@ -12,11 +12,11 @@ export const runtime = 'edge';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { prompt, model_id, parameters } = body;
+    const { prompt, model_id, parameters, input_image } = body;
 
-    // Simple validation
-    if (!prompt) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    // Simple validation for text-to-image
+    if (!prompt && !input_image) {
+      return NextResponse.json({ error: 'Prompt or input image is required' }, { status: 400 });
     }
 
     // Get model configuration
@@ -44,13 +44,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate with Nano Banana (direct NSFW generation)
-    const result = await generateWithNanoBanana(prompt, model_id, {
+    const result = await generateWithNanoBanana(prompt || 'beautiful nude model', model_id, {
       negative_prompt: parameters?.negative_prompt,
       width: parameters?.width || 1024,
       height: parameters?.height || 1024,
       guidance_scale: parameters?.guidanceScale || 7.5,
       steps: parameters?.steps || 50,
-      enhance: false // Direct NSFW generation without enhancement
+      enhance: false, // Direct NSFW generation without enhancement
+      input_image: input_image, // For image-to-image
+      strength: parameters?.strength || 0.75 // How much to transform the image
     });
 
     if (!result.success) {

@@ -53,6 +53,8 @@ export async function generateImageWithRunpod(
     seed?: number;
     scheduler?: string;
     sampler?: string;
+    input_image?: string; // Base64 encoded image for image-to-image
+    strength?: number; // How much to transform the input image (0-1)
   } = {}
 ): Promise<{
   success: boolean;
@@ -99,7 +101,13 @@ export async function generateImageWithRunpod(
       cfg_scale: parameters.guidance_scale || 7.5,
       sampler_name: parameters.sampler || 'DPMSolverMultistepScheduler',
       clip_skip: 1,
-      karras: true
+      karras: true,
+      // Image-to-image parameters
+      ...(parameters.input_image ? {
+        init_image: parameters.input_image,
+        strength: parameters.strength || 0.75, // How much to transform the image
+        denoising_strength: parameters.strength || 0.75
+      } : {})
     }
   };
 
@@ -214,6 +222,8 @@ export async function generateWithNanoBanana(
     seed?: number;
     sampler?: string;
     scheduler?: string;
+    input_image?: string; // For image-to-image
+    strength?: number; // How much to transform (0-1)
   } = {}
 ): Promise<{
   success: boolean;
@@ -227,8 +237,8 @@ export async function generateWithNanoBanana(
 
     // Using original prompt directly without enhancement
 
-    // Default negative prompt to avoid common issues
-    const defaultNegative = 'low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers';
+    // Default negative prompt for NSFW generation - only quality issues, no content restrictions
+    const defaultNegative = 'child, minor, underage, low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers';
 
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {
@@ -241,7 +251,9 @@ export async function generateWithNanoBanana(
       num_inference_steps: options.steps,
       seed: options.seed,
       scheduler: options.scheduler,
-      sampler: options.sampler
+      sampler: options.sampler,
+      input_image: options.input_image,
+      strength: options.strength
     });
 
     return {
