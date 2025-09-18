@@ -9,7 +9,7 @@ const MODELS_FILE = path.join(process.cwd(), 'models.json');
 // Default models if file doesn't exist
 const defaultModels = [
   {
-    id: '1',
+    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     name: 'DreamForge XL',
     description: 'High-quality general purpose model with excellent prompt adherence',
     category: 'realistic',
@@ -26,7 +26,7 @@ const defaultModels = [
     }
   },
   {
-    id: '2',
+    id: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
     name: 'Anime Pro Max',
     description: 'Specialized in anime and manga art styles with vibrant colors',
     category: 'anime',
@@ -43,7 +43,7 @@ const defaultModels = [
     }
   },
   {
-    id: '3',
+    id: '6ba7b811-9dad-11d1-80b4-00c04fd430c8',
     name: 'Photorealistic Vision',
     description: 'Ultra-realistic human portraits and photography',
     category: 'realistic',
@@ -60,7 +60,7 @@ const defaultModels = [
     }
   },
   {
-    id: '4',
+    id: '6ba7b812-9dad-11d1-80b4-00c04fd430c8',
     name: 'Abstract Dreams',
     description: 'Surreal and abstract artistic compositions',
     category: 'abstract',
@@ -77,7 +77,7 @@ const defaultModels = [
     }
   },
   {
-    id: '5',
+    id: '6ba7b813-9dad-11d1-80b4-00c04fd430c8',
     name: '3D Render Pro',
     description: 'High-quality 3D renders with realistic lighting',
     category: '3d',
@@ -94,7 +94,7 @@ const defaultModels = [
     }
   },
   {
-    id: '6',
+    id: '6ba7b814-9dad-11d1-80b4-00c04fd430c8',
     name: 'Fantasy Worlds',
     description: 'Epic fantasy landscapes and creature designs',
     category: 'artistic',

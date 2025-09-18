@@ -2,32 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Simulated AI personalities for each model
 const modelPersonalities: { [key: string]: { name: string; style: string; traits: string[] } } = {
-  '1': {
+  'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
     name: 'DreamForge XL',
     style: 'professional',
     traits: ['detailed', 'versatile', 'technical']
   },
-  '2': {
+  '6ba7b810-9dad-11d1-80b4-00c04fd430c8': {
     name: 'Anime Pro Max',
     style: 'enthusiastic',
     traits: ['creative', 'vibrant', 'expressive']
   },
-  '3': {
+  '6ba7b811-9dad-11d1-80b4-00c04fd430c8': {
     name: 'Photorealistic Vision',
     style: 'sophisticated',
     traits: ['precise', 'realistic', 'professional']
   },
-  '4': {
+  '6ba7b812-9dad-11d1-80b4-00c04fd430c8': {
     name: 'Abstract Dreams',
     style: 'artistic',
     traits: ['imaginative', 'conceptual', 'experimental']
   },
-  '5': {
+  '6ba7b813-9dad-11d1-80b4-00c04fd430c8': {
     name: '3D Render Pro',
     style: 'technical',
     traits: ['detailed', 'dimensional', 'precise']
   },
-  '6': {
+  '6ba7b814-9dad-11d1-80b4-00c04fd430c8': {
     name: 'Fantasy Worlds',
     style: 'imaginative',
     traits: ['magical', 'storytelling', 'adventurous']
@@ -46,7 +46,7 @@ const modelPersonalities: { [key: string]: { name: string; style: string; traits
 
 // Generate contextual responses based on model personality
 function generateResponse(modelId: string, message: string): string {
-  const personality = modelPersonalities[modelId] || modelPersonalities['1'];
+  const personality = modelPersonalities[modelId] || modelPersonalities['f47ac10b-58cc-4372-a567-0e02b2c3d479'];
   const lowerMessage = message.toLowerCase();
 
   // Image generation related responses

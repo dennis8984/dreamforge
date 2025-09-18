@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,7 +10,7 @@ const MODELS_FILE = path.join(process.cwd(), 'models.json');
 // Initialize with default models if file doesn't exist
 const defaultModels = [
   {
-    id: '1',
+    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     name: 'DreamForge XL',
     description: 'High-quality general purpose model with excellent prompt adherence',
     category: 'realistic',
@@ -26,7 +27,7 @@ const defaultModels = [
     }
   },
   {
-    id: '2',
+    id: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
     name: 'Anime Pro Max',
     description: 'Specialized in anime and manga art styles with vibrant colors',
     category: 'anime',
@@ -139,9 +140,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new model with defaults
+    // Create new model with defaults (use UUID for Supabase compatibility)
+    const modelId = body.id || uuidv4();
     const newModel = {
-      id: body.id || Date.now().toString(),
+      id: modelId,
       name: body.name,
       description: body.description,
       category: body.category || 'realistic',
