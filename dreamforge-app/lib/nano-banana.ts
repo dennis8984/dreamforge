@@ -83,6 +83,8 @@ export async function generateImageWithRunpod(
     guidance_scale?: number;
     num_inference_steps?: number;
     seed?: number;
+    scheduler?: string;
+    sampler?: string;
   } = {}
 ): Promise<{
   success: boolean;
