@@ -43,14 +43,15 @@ export async function POST(request: NextRequest) {
       }, { status: 503 });
     }
 
-    // Generate with Nano Banana (direct NSFW generation)
+    // Generate with Nano Banana (with genur.art optimized settings)
     const result = await generateWithNanoBanana(prompt || 'beautiful nude model', model_id, {
       negative_prompt: parameters?.negative_prompt,
       width: parameters?.width || 1024,
       height: parameters?.height || 1024,
-      guidance_scale: parameters?.guidanceScale || 7.5,
-      steps: parameters?.steps || 50,
-      enhance: false, // Direct NSFW generation without enhancement
+      guidance_scale: parameters?.guidanceScale || 4.5, // Lowered from 7.5 to match genur.art
+      steps: parameters?.steps || 35, // Optimized from 50 to 35 for faster generation
+      enhance: true, // Enable adult-oriented prompt enhancement
+      sampler: parameters?.sampler || 'DPM++ 2M',
       input_image: input_image, // For image-to-image
       strength: parameters?.strength || 0.75 // How much to transform the image
     });

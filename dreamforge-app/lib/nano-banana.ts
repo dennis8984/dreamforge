@@ -32,13 +32,40 @@ export const NANO_BANANA_MODELS = {
   }
 };
 
-// Removed prompt enhancement - now just returns the original prompt
-// Prompt enhancement has been completely removed
-// This function is kept for backward compatibility but now just returns the original prompt
+// Adult-oriented prompt enhancement
+// Enhances prompts to be more detailed and explicit for NSFW content generation
 export async function enhancePromptWithGemini(
   prompt: string
 ): Promise<string> {
-  return prompt;
+  // Skip enhancement for already detailed prompts
+  if (prompt.length > 100 || prompt.includes('nude') || prompt.includes('naked')) {
+    return prompt;
+  }
+
+  // Adult-oriented enhancements
+  const enhancements = [
+    'high quality photography',
+    'professional lighting',
+    '8k resolution',
+    'detailed',
+    'realistic'
+  ];
+
+  // Add NSFW-specific keywords if not already present
+  let enhancedPrompt = prompt;
+
+  // If the prompt seems generic, make it more adult-oriented
+  if (!prompt.toLowerCase().includes('nude') && !prompt.toLowerCase().includes('naked') && !prompt.toLowerCase().includes('nsfw')) {
+    enhancedPrompt = `nude ${prompt}`;
+  }
+
+  // Add quality enhancements
+  const randomEnhancements = enhancements
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .join(', ');
+
+  return `${enhancedPrompt}, ${randomEnhancements}, explicit adult content`;
 }
 
 // Generate image using Runpod
@@ -102,8 +129,9 @@ export async function generateImageWithRunpod(
       negative_prompt: parameters.negative_prompt || '',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
-      num_inference_steps: parameters.num_inference_steps || 30,
-      guidance_scale: parameters.guidance_scale || 7.5,
+      num_inference_steps: parameters.num_inference_steps || 35,
+      guidance_scale: parameters.guidance_scale || 4.5,
+      sampler: parameters.sampler || 'DPM++ 2M',
       seed: parameters.seed && parameters.seed !== -1 ? parameters.seed : Math.floor(Math.random() * 1000000),
       // Image-to-image parameters
       ...(parameters.input_image ? {
@@ -308,12 +336,19 @@ export async function generateWithNanoBanana(
   error?: string;
 }> {
   try {
-    const finalPrompt = prompt;
+    // Enhance prompt if requested (default is true for better results)
+    const shouldEnhance = options.enhance !== false;
+    const finalPrompt = shouldEnhance ? await enhancePromptWithGemini(prompt) : prompt;
 
-    // Using original prompt directly without enhancement
+    if (shouldEnhance && finalPrompt !== prompt) {
+      console.log('Prompt enhanced:', {
+        original: prompt,
+        enhanced: finalPrompt
+      });
+    }
 
-    // Default negative prompt for NSFW generation - only quality issues, no content restrictions
-    const defaultNegative = 'child, minor, underage, low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers';
+    // Default negative prompt based on genur.art settings - minimal and focused
+    const defaultNegative = 'cropped, deformed, child, childish, toddler, watermark, bad quality, low quality, worst quality, ugly, morphed, render, blender, 3d_model, tongue';
 
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {
