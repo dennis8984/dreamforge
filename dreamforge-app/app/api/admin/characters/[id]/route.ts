@@ -24,6 +24,9 @@ export async function GET(
   }
 
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
     const { data: character, error } = await supabase
       .from('characters')
       .select('*')
@@ -58,6 +61,9 @@ export async function PATCH(
   }
 
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
     const body = await request.json();
 
     // If updating slug, check uniqueness
@@ -112,6 +118,9 @@ export async function DELETE(
   }
 
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
     const { error } = await supabase
       .from('characters')
       .delete()
