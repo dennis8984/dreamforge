@@ -11,27 +11,132 @@ const MODELS_FILE = path.join(process.cwd(), 'models.json');
 const defaultModels = [
   {
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    name: 'NSFW Photo Model',
-    description: 'Professional nude photography model for artistic and adult content',
+    name: 'DreamForge XL',
+    description: 'High-quality general purpose model with excellent prompt adherence',
     category: 'realistic',
-    thumbnail_url: '',
+    thumbnail_url: 'https://picsum.photos/400/400?random=10',
     is_premium: false,
     is_featured: true,
-    view_count: 0,
-    like_count: 0,
-    nano_banana_model: 'stable-diffusion-xl',
+    view_count: 15420,
+    like_count: 3241,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
     generation_mode: 'both',
     sample_prompts: [
-      'beautiful nude model, professional photography, studio lighting',
-      'sexy woman, artistic nude, high quality photography',
-      'nude fashion model, professional photoshoot, 8k quality'
+      'beautiful portrait, professional photography, studio lighting',
+      'artistic photography, high quality',
+      'fashion model, professional photoshoot, 8k quality'
     ],
-    negative_prompt: 'child, minor, underage, clothes, clothing, dressed',
+    negative_prompt: 'low quality, blurry',
     generated_images: [],
     capabilities: {
       max_resolution: '1024x1024',
-      styles: ['realistic', 'artistic', 'photography', 'nude', 'nsfw'],
+      styles: ['realistic', 'artistic', 'photography'],
       speed: 'fast'
+    }
+  },
+  {
+    id: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+    name: 'Anime Pro Max',
+    description: 'Specialized in anime and manga art styles with vibrant colors',
+    category: 'anime',
+    thumbnail_url: 'https://picsum.photos/400/400?random=11',
+    is_premium: true,
+    is_featured: true,
+    view_count: 12350,
+    like_count: 2891,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    generation_mode: 'both',
+    sample_prompts: [],
+    negative_prompt: '',
+    generated_images: [],
+    capabilities: {
+      max_resolution: '1024x1024',
+      styles: ['anime', 'manga', 'chibi'],
+      speed: 'medium'
+    }
+  },
+  {
+    id: '6ba7b811-9dad-11d1-80b4-00c04fd430c8',
+    name: 'Photorealistic Vision',
+    description: 'Ultra-realistic human portraits and photography',
+    category: 'realistic',
+    thumbnail_url: 'https://picsum.photos/400/400?random=12',
+    is_premium: true,
+    is_featured: false,
+    view_count: 9820,
+    like_count: 1876,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    generation_mode: 'both',
+    sample_prompts: [],
+    negative_prompt: '',
+    generated_images: [],
+    capabilities: {
+      max_resolution: '2048x2048',
+      styles: ['portrait', 'fashion', 'documentary'],
+      speed: 'slow'
+    }
+  },
+  {
+    id: '6ba7b812-9dad-11d1-80b4-00c04fd430c8',
+    name: 'Abstract Dreams',
+    description: 'Surreal and abstract artistic compositions',
+    category: 'abstract',
+    thumbnail_url: 'https://picsum.photos/400/400?random=13',
+    is_premium: false,
+    is_featured: false,
+    view_count: 7654,
+    like_count: 1432,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    generation_mode: 'both',
+    sample_prompts: [],
+    negative_prompt: '',
+    generated_images: [],
+    capabilities: {
+      max_resolution: '1024x1024',
+      styles: ['abstract', 'surreal', 'modern art'],
+      speed: 'fast'
+    }
+  },
+  {
+    id: '6ba7b813-9dad-11d1-80b4-00c04fd430c8',
+    name: '3D Render Pro',
+    description: 'High-quality 3D renders with realistic lighting',
+    category: '3d',
+    thumbnail_url: 'https://picsum.photos/400/400?random=14',
+    is_premium: true,
+    is_featured: true,
+    view_count: 11234,
+    like_count: 2156,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    generation_mode: 'both',
+    sample_prompts: [],
+    negative_prompt: '',
+    generated_images: [],
+    capabilities: {
+      max_resolution: '2048x2048',
+      styles: ['3d', 'render', 'cgi'],
+      speed: 'slow'
+    }
+  },
+  {
+    id: '6ba7b814-9dad-11d1-80b4-00c04fd430c8',
+    name: 'Fantasy Worlds',
+    description: 'Epic fantasy landscapes and creature designs',
+    category: 'artistic',
+    thumbnail_url: 'https://picsum.photos/400/400?random=15',
+    is_premium: false,
+    is_featured: false,
+    view_count: 8976,
+    like_count: 1678,
+    nano_banana_model: 'gemini-2.5-flash-image-preview',
+    generation_mode: 'both',
+    sample_prompts: [],
+    negative_prompt: '',
+    generated_images: [],
+    capabilities: {
+      max_resolution: '1024x1024',
+      styles: ['fantasy', 'magical', 'mythical'],
+      speed: 'medium'
     }
   }
 ];

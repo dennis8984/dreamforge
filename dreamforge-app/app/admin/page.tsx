@@ -85,7 +85,11 @@ export default function AdminDashboard() {
   const loadModels = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/models');
+      const response = await fetch('/api/admin/models?admin=true', {
+        headers: {
+          'x-admin-key': 'dreamforge_admin_2024'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setModels(data);
@@ -101,10 +105,11 @@ export default function AdminDashboard() {
     e.preventDefault();
 
     try {
-      const response = await fetch('/api/admin/models', {
+      const response = await fetch('/api/admin/models?admin=true', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-key': 'dreamforge_admin_2024'
         },
         body: JSON.stringify({
           ...newModel,
@@ -152,8 +157,11 @@ export default function AdminDashboard() {
     if (!confirm('Are you sure you want to delete this model?')) return;
 
     try {
-      const response = await fetch(`/api/admin/models/${modelId}`, {
-        method: 'DELETE'
+      const response = await fetch(`/api/admin/models/${modelId}?admin=true`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-key': 'dreamforge_admin_2024'
+        }
       });
 
       if (response.ok) {
