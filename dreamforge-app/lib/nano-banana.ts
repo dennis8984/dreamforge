@@ -66,7 +66,7 @@ export async function enhancePromptWithGemini(
   const explicitKeyword = explicitKeywords[Math.floor(Math.random() * explicitKeywords.length)];
 
   // Add explicit NSFW context to the prompt
-  let enhancedPrompt = `${explicitKeyword} ${prompt}`;
+  const enhancedPrompt = `${explicitKeyword} ${prompt}`;
 
   // Add quality enhancements
   const selectedEnhancements = qualityEnhancements
