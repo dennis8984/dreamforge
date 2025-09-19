@@ -116,8 +116,6 @@ export async function DELETE(
   }
 }
 
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import type { Character } from '@/types/characters';
 
 // Admin authentication check
