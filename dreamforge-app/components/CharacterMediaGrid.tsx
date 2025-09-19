@@ -60,7 +60,7 @@ export default function CharacterMediaGrid({ items, isPaidUser = false }: Props)
       )}
 
       {showPaywall && (
-        <PaywallModal onClose={() => setShowPaywall(false)} />
+        <PaywallModal onClose={() => setShowPaywall(false)} model={{ id: 'paywall', name: 'Members-Only Content' }} />
       )}
     </div>
   );
