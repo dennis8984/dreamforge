@@ -40,43 +40,9 @@ export interface PaginatedResult<T> {
   pageSize: number;
 }
 
-export interface Character {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string;
-  avatar_url?: string;
-  cover_url?: string;
-  tags: string[];
-  owner_id?: string;
-  training_status: 'draft' | 'queued' | 'training' | 'ready' | 'failed';
-  training_job_id?: string;
-  model_ref?: {
-    seed?: number;
-    lora_path?: string;
-    checkpoint?: string;
-    style_prompt?: string;
-    negative_prompt?: string;
-    [key: string]: any;
-  };
-  created_at: string;
-  updated_at: string;
-}
+// Duplicate older declaration removed to avoid conflicts
 
-export interface CharacterMedia {
-  id: string;
-  character_id: string;
-  type: 'image' | 'video';
-  url: string;
-  width?: number;
-  height?: number;
-  duration_ms?: number;
-  is_hd: boolean;
-  visibility: 'public' | 'members';
-  prompt?: string;
-  metadata?: Record<string, any>;
-  created_at: string;
-}
+// Duplicate older declaration removed; using the stricter version above
 
 export interface CharacterWithMedia extends Character {
   media?: CharacterMedia[];
