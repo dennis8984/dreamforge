@@ -37,6 +37,9 @@ export default function Header({ isAuthenticated, setIsAuthenticated, userTier }
             </Link>
 
             <nav className="flex items-center space-x-6">
+              <Link href="/characters" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                Characters
+              </Link>
               <Link href="/gallery" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Gallery
               </Link>

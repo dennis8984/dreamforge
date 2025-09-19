@@ -8,8 +8,8 @@ Go to your Vercel Dashboard → Project Settings → Environment Variables and a
 
 | Variable | Value |
 |----------|-------|
-| `RUNPOD_API_URL` | `https://api.runpod.ai/v2/ga8coh1zc01r57/run` |
-| `RUNPOD_API_KEY` | `rpa_S3JTVFGGKN706EK4XJ5RTJ577JRY6OC7PERX57HC1sp1yl` |
+| `RUNPOD_API_URL` | `https://api.runpod.ai/v2/YOUR_ENDPOINT_ID/run` |
+| `RUNPOD_API_KEY` | `YOUR_RUNPOD_API_KEY_HERE` |
 
 ### How to Add:
 
@@ -25,11 +25,16 @@ Go to your Vercel Dashboard → Project Settings → Environment Variables and a
 6. Repeat for `RUNPOD_API_KEY`
 7. **IMPORTANT**: After adding variables, you must redeploy for changes to take effect
 
+### Getting Your Runpod Credentials
+
+1. Sign up/Login at https://runpod.io
+2. Create a new Serverless Endpoint with Stable Diffusion template
+3. Copy your Endpoint ID from the URL
+4. Generate an API key from Account Settings
+
 ### Verify Your Runpod Worker
 
-Your worker is now active at: `ga8coh1zc01r57`
-
-Jobs are being queued successfully. If images are taking long to generate:
+Once configured, jobs should queue successfully. If images are taking long to generate:
 - Check your Runpod dashboard for worker status
 - Ensure your worker has GPU resources available
 - Check if the worker is scaled down (serverless) and needs to warm up

@@ -3,6 +3,8 @@
 // Runpod configuration - gets values from Vercel environment variables
 const RUNPOD_API_URL = process.env.RUNPOD_API_URL || process.env.NEXT_PUBLIC_RUNPOD_API_URL || '';
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || process.env.NEXT_PUBLIC_RUNPOD_API_KEY || '';
+// Optional dedicated endpoint for LoRA training jobs
+const RUNPOD_TRAIN_API_URL = process.env.RUNPOD_TRAIN_API_URL || process.env.NEXT_PUBLIC_RUNPOD_TRAIN_API_URL || '';
 
 // Model configurations for Nano Banana
 export const NANO_BANANA_MODELS = {
@@ -37,35 +39,42 @@ export const NANO_BANANA_MODELS = {
 export async function enhancePromptWithGemini(
   prompt: string
 ): Promise<string> {
-  // Skip enhancement for already detailed prompts
-  if (prompt.length > 100 || prompt.includes('nude') || prompt.includes('naked')) {
-    return prompt;
+  // Skip enhancement for already explicit prompts
+  if (prompt.includes('nude') || prompt.includes('naked') || prompt.includes('nsfw') || prompt.includes('explicit')) {
+    // Just add quality enhancements
+    return `${prompt}, high quality, detailed, realistic, professional photography`;
   }
 
-  // Adult-oriented enhancements
-  const enhancements = [
-    'high quality photography',
-    'professional lighting',
-    '8k resolution',
-    'detailed',
-    'realistic'
+  // For generic prompts, be very explicit about NSFW content
+  const explicitKeywords = [
+    'completely nude',
+    'fully naked',
+    'no clothes',
+    'explicit nudity'
   ];
 
-  // Add NSFW-specific keywords if not already present
-  let enhancedPrompt = prompt;
+  // Quality enhancements
+  const qualityEnhancements = [
+    'high quality',
+    'detailed',
+    'realistic',
+    'professional photography',
+    '8k resolution'
+  ];
 
-  // If the prompt seems generic, make it more adult-oriented
-  if (!prompt.toLowerCase().includes('nude') && !prompt.toLowerCase().includes('naked') && !prompt.toLowerCase().includes('nsfw')) {
-    enhancedPrompt = `nude ${prompt}`;
-  }
+  // Pick a random explicit keyword to ensure NSFW generation
+  const explicitKeyword = explicitKeywords[Math.floor(Math.random() * explicitKeywords.length)];
+
+  // Add explicit NSFW context to the prompt
+  let enhancedPrompt = `${explicitKeyword} ${prompt}`;
 
   // Add quality enhancements
-  const randomEnhancements = enhancements
+  const selectedEnhancements = qualityEnhancements
     .sort(() => Math.random() - 0.5)
     .slice(0, 3)
     .join(', ');
 
-  return `${enhancedPrompt}, ${randomEnhancements}, explicit adult content`;
+  return `${enhancedPrompt}, ${selectedEnhancements}, adult content, nsfw`;
 }
 
 // Generate image using Runpod
@@ -122,11 +131,11 @@ export async function generateImageWithRunpod(
     };
   }
 
-  // Simplified request body for SDXL on Runpod
+  // Request body for SDXL on Runpod with explicit NSFW generation
   const requestBody = {
     input: {
-      prompt: prompt,
-      negative_prompt: parameters.negative_prompt || '',
+      prompt: `NSFW, ${prompt}, nude, explicit`, // Ensure NSFW keywords are at the beginning
+      negative_prompt: parameters.negative_prompt || 'child, minor, underage',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
       num_inference_steps: parameters.num_inference_steps || 35,
@@ -311,6 +320,91 @@ export async function checkRunpodJobStatus(jobId: string): Promise<{
   }
 }
 
+// Queue a LoRA training job on Runpod
+export async function queueRunpodTrainingJob(
+  images: string[],
+  options: {
+    instanceName?: string;
+    rank?: number;
+    steps?: number;
+    learningRate?: number;
+  } = {}
+): Promise<{ success: boolean; jobId?: string; error?: string }> {
+  if (!RUNPOD_API_KEY) {
+    return { success: false, error: 'Runpod API key not configured' };
+  }
+  if (!RUNPOD_TRAIN_API_URL) {
+    return { success: false, error: 'RUNPOD_TRAIN_API_URL is not configured' };
+  }
+
+  const requestBody = {
+    input: {
+      action: 'train_lora',
+      images,
+      params: {
+        instance_name: options.instanceName || 'character',
+        rank: options.rank || 16,
+        steps: options.steps || 800,
+        learning_rate: options.learningRate || 1e-4
+      }
+    }
+  };
+
+  try {
+    const response = await fetch(RUNPOD_TRAIN_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      return { success: false, error: result?.error || 'Runpod training error' };
+    }
+    if (result.id) {
+      return { success: true, jobId: result.id };
+    }
+    return { success: false, error: 'Unexpected training response' };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to queue training' };
+  }
+}
+
+// Check training status
+export async function checkRunpodTrainingStatus(
+  jobId: string
+): Promise<{ status: 'queued' | 'in_progress' | 'completed' | 'failed'; modelRef?: unknown; error?: string }> {
+  try {
+    if (!RUNPOD_TRAIN_API_URL || !RUNPOD_API_KEY) {
+      return { status: 'failed', error: 'Training endpoint not configured' } as const;
+    }
+    const endpointId = RUNPOD_TRAIN_API_URL.match(/\/v2\/([^\/]+)\/run/)?.[1];
+    if (!endpointId) {
+      return { status: 'failed', error: 'Invalid RUNPOD_TRAIN_API_URL' } as const;
+    }
+    const statusUrl = `https://api.runpod.ai/v2/${endpointId}/status/${jobId}`;
+    const res = await fetch(statusUrl, {
+      headers: { 'Authorization': `Bearer ${RUNPOD_API_KEY}` }
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      return { status: 'failed', error: json?.error || 'Status error' } as const;
+    }
+    if (json.status === 'COMPLETED') {
+      const modelRef = json.output?.model || json.output?.lora || json.output || null;
+      return { status: 'completed', modelRef } as const;
+    }
+    if (json.status === 'FAILED' || json.status === 'ERROR') {
+      return { status: 'failed', error: json?.error || 'Training failed' } as const;
+    }
+    return { status: 'in_progress' } as const;
+  } catch (err) {
+    return { status: 'failed', error: err instanceof Error ? err.message : 'Failed to check training' } as const;
+  }
+}
+
 // Main Nano Banana generation function
 export async function generateWithNanoBanana(
   prompt: string,
@@ -347,8 +441,8 @@ export async function generateWithNanoBanana(
       });
     }
 
-    // Default negative prompt based on genur.art settings - minimal and focused
-    const defaultNegative = 'cropped, deformed, child, childish, toddler, watermark, bad quality, low quality, worst quality, ugly, morphed, render, blender, 3d_model, tongue';
+    // Minimal negative prompt - focus on avoiding quality issues, not content
+    const defaultNegative = 'child, minor, underage, bad quality, low quality, blurry, watermark, cropped, deformed';
 
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {

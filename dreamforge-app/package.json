@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "verify-env": "tsx scripts/verify-env.ts",
+    "prebuild": "npm run verify-env",
+    "security-check": "grep -r 'rpa_\\|AIza\\|eyJ' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.git . || echo 'No secrets found'"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
