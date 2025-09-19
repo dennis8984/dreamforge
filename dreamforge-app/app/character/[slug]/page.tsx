@@ -36,7 +36,12 @@ export default function CharacterDetail({ params }: { params: { slug: string } }
       <Header isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} userTier={userTier} />
       <div className="container mx-auto px-4 py-8 space-y-6">
         {character && (
-          <CharacterHeader name={character.name} avatar_url={character.avatar_url} tags={character.tags} training_status={(character as any).training_status} />
+          <CharacterHeader
+            name={character.name}
+            avatar_url={character.avatar_url}
+            tags={character.tags}
+            training_status={(character as unknown as { training_status?: 'draft'|'queued'|'training'|'ready'|'failed' }).training_status}
+          />
         )}
         <CharacterMediaGrid items={media} isPaidUser={isPaid} />
       </div>
