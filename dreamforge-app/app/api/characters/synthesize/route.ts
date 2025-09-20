@@ -23,11 +23,21 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    if (!result.success || !result.imageUrl) {
+    if (!result.success) {
       return NextResponse.json({ error: result.error || 'Synthesis failed' }, { status: 500 });
     }
 
-    return NextResponse.json({ imageUrl: result.imageUrl });
+    // If job is queued, return job ID for polling
+    if (result.jobId) {
+      return NextResponse.json({ jobId: result.jobId });
+    }
+
+    // If image was generated directly, return it
+    if (result.imageUrl) {
+      return NextResponse.json({ imageUrl: result.imageUrl });
+    }
+
+    return NextResponse.json({ error: 'Unexpected response from generation service' }, { status: 500 });
 
   } catch (error) {
     console.error('Synthesis error:', error);

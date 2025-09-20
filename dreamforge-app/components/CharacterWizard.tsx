@@ -54,8 +54,15 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
           body: JSON.stringify({ image: singleImage })
         });
         const result = await response.json();
+        
         if (response.ok && result.imageUrl) {
           results.push(result.imageUrl);
+        } else if (response.ok && result.jobId) {
+          // Poll for the result
+          const imageUrl = await pollForResult(result.jobId);
+          if (imageUrl) {
+            results.push(imageUrl);
+          }
         }
       }
       onDatasetReady([singleImage, ...results]);
@@ -63,6 +70,26 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
     } finally {
       setBusy(false);
     }
+  };
+
+  const pollForResult = async (jobId: string): Promise<string | null> => {
+    for (let i = 0; i < 30; i++) { // Poll for a maximum of 60 seconds
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      try {
+        const response = await fetch(`/api/generate?job_id=${jobId}`);
+        const result = await response.json();
+        if (result.status === 'completed' && result.image_url) {
+          return result.image_url;
+        }
+        if (result.status === 'failed' || result.error) {
+          console.error('Job failed:', result.error);
+          return null;
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }
+    return null;
   };
 
   const generateFromDesc = async () => {
