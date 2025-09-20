@@ -106,28 +106,9 @@ export async function generateImageWithRunpod(
   });
 
   if (!RUNPOD_API_KEY || RUNPOD_API_KEY === 'your_runpod_api_key_here') {
-    console.warn('='.repeat(80));
-    console.warn('WARNING: Runpod API key not configured - using demo mode');
-    console.warn('To enable real image generation:');
-    console.warn('1. Get your API key from https://runpod.io');
-    console.warn('2. Set RUNPOD_API_KEY in Vercel environment variables');
-    console.warn('='.repeat(80));
-
-    // Return demo placeholder image for character creation
-    const demoImages = [
-      'https://picsum.photos/seed/char1/512/512',
-      'https://picsum.photos/seed/char2/512/512',
-      'https://picsum.photos/seed/char3/512/512',
-      'https://picsum.photos/seed/char4/512/512',
-      'https://picsum.photos/seed/char5/512/512'
-    ];
-
-    // Return a random demo image
-    const randomIndex = Math.floor(Math.random() * demoImages.length);
     return {
-      success: true,
-      imageUrl: demoImages[randomIndex],
-      jobId: 'demo-' + Math.random().toString(36).substr(2, 9)
+      success: false,
+      error: 'Image generation service not available. Please contact support.'
     };
   }
 
@@ -482,13 +463,3 @@ export async function generateWithNanoBanana(
   }
 }
 
-// Generate mock image for testing (when Runpod is not configured)
-// Now returns null to indicate no generation available
-export function generateMockImage(prompt: string): string | null {
-  console.error('ERROR: Cannot generate images - Runpod not configured');
-  console.error('To enable real AI generation:');
-  console.error('1. Set RUNPOD_API_KEY in Vercel environment variables');
-  console.error('2. Set RUNPOD_API_URL in Vercel environment variables');
-  console.error('Attempted prompt:', prompt);
-  return null;
-}

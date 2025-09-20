@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface GeneratedImage {
   id: string;
@@ -11,95 +13,149 @@ interface GeneratedImage {
   created_at: string;
   likes: number;
   views: number;
+  is_nsfw: boolean;
+  character_id?: string;
+  user_id: string;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+  subscription_tier: 'free' | 'pro' | 'premium';
+  is_member: boolean;
 }
 
 export default function GalleryPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userTier] = useState('free');
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const router = useRouter();
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      setIsAuthenticated(true);
+    checkAuthAndLoadProfile();
+  }, []);
+
+  useEffect(() => {
+    if (userProfile !== null) {
+      loadGalleryImages();
+    }
+  }, [filter, userProfile]);
+
+  const checkAuthAndLoadProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session) {
+        setIsAuthenticated(true);
+
+        // Load user profile to check membership status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile) {
+          setUserProfile({
+            id: profile.id,
+            email: session.user.email || '',
+            subscription_tier: profile.subscription_tier || 'free',
+            is_member: profile.subscription_tier !== 'free'
+          });
+        }
+      } else {
+        // Non-authenticated users get limited access
+        setUserProfile(null);
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadGalleryImages = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('generated_images')
+        .select(`
+          *,
+          characters!character_id (
+            name,
+            slug
+          )
+        `);
+
+      // Apply filters
+      switch (filter) {
+        case 'trending':
+          query = query.order('views', { ascending: false });
+          break;
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'most-liked':
+          query = query.order('likes', { ascending: false });
+          break;
+        default:
+          query = query.order('created_at', { ascending: false });
+      }
+
+      // Limit to 50 images for performance
+      query = query.limit(50);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error loading gallery:', error);
+        setImages([]);
+      } else {
+        setImages(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading gallery:', error);
+      setImages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageClick = (image: GeneratedImage) => {
+    // Check if image is NSFW and user is not a member
+    if (image.is_nsfw && (!userProfile || !userProfile.is_member)) {
+      setShowPaywall(true);
+      return;
     }
 
-    // Load mock gallery images
-    loadGalleryImages();
-  }, [filter]);
+    // Navigate to image detail page
+    router.push(`/gallery/${image.id}`);
+  };
 
-  const loadGalleryImages = () => {
-    // Mock data for gallery
-    const mockImages: GeneratedImage[] = [
-      {
-        id: '1',
-        prompt: 'A majestic dragon soaring through clouds at sunset',
-        image_url: 'https://picsum.photos/400/400?random=1',
-        model_name: 'DreamForge XL',
-        created_at: '2024-01-15',
-        likes: 234,
-        views: 1520
-      },
-      {
-        id: '2',
-        prompt: 'Cyberpunk city with neon lights and flying cars',
-        image_url: 'https://picsum.photos/400/400?random=2',
-        model_name: 'Anime Pro',
-        created_at: '2024-01-14',
-        likes: 189,
-        views: 982
-      },
-      {
-        id: '3',
-        prompt: 'Ancient forest with mystical glowing mushrooms',
-        image_url: 'https://picsum.photos/400/400?random=3',
-        model_name: 'Fantasy Master',
-        created_at: '2024-01-13',
-        likes: 412,
-        views: 2341
-      },
-      {
-        id: '4',
-        prompt: 'Portrait of a futuristic warrior with energy armor',
-        image_url: 'https://picsum.photos/400/400?random=4',
-        model_name: 'Realistic Vision',
-        created_at: '2024-01-12',
-        likes: 567,
-        views: 3210
-      },
-      {
-        id: '5',
-        prompt: 'Underwater palace made of coral and pearls',
-        image_url: 'https://picsum.photos/400/400?random=5',
-        model_name: 'DreamForge XL',
-        created_at: '2024-01-11',
-        likes: 321,
-        views: 1876
-      },
-      {
-        id: '6',
-        prompt: 'Space station orbiting a purple planet',
-        image_url: 'https://picsum.photos/400/400?random=6',
-        model_name: 'Sci-Fi Generator',
-        created_at: '2024-01-10',
-        likes: 445,
-        views: 2654
-      }
-    ];
-
-    setImages(mockImages);
+  const handleUpgrade = () => {
+    router.push('/pricing');
   };
 
   const filters = ['all', 'trending', 'newest', 'most-liked'];
+
+  // Blur style for NSFW content for non-members
+  const getNSFWStyle = (image: GeneratedImage) => {
+    if (image.is_nsfw && (!userProfile || !userProfile.is_member)) {
+      return 'blur-xl';
+    }
+    return '';
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header
         isAuthenticated={isAuthenticated}
         setIsAuthenticated={setIsAuthenticated}
-        userTier={userTier}
+        userTier={userProfile?.subscription_tier || 'free'}
       />
 
       <div className="container mx-auto px-4 py-8">
@@ -129,24 +185,82 @@ export default function GalleryPage() {
           ))}
         </div>
 
-        {/* Gallery Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {images.map((image) => (
-            <div
-              key={image.id}
-              className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
-            >
-              <div className="relative aspect-square">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.image_url}
-                  alt={image.prompt}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded">
-                  {image.model_name}
-                </div>
+        {/* Paywall Modal */}
+        {showPaywall && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Premium Content
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                This content is exclusive to our members. Upgrade your account to unlock full access to all NSFW galleries and character profiles.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={handleUpgrade}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Upgrade to Premium
+                </button>
+                <button
+                  onClick={() => setShowPaywall(false)}
+                  className="w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Continue Browsing
+                </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Gallery Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : images.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 dark:text-gray-400">No images found. Be the first to create!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {images.map((image) => (
+              <div
+                key={image.id}
+                onClick={() => handleImageClick(image)}
+                className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative"
+              >
+                <div className="relative aspect-square">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.image_url}
+                    alt={image.prompt}
+                    className={`w-full h-full object-cover ${getNSFWStyle(image)}`}
+                  />
+
+                  {/* NSFW Badge for non-members */}
+                  {image.is_nsfw && (!userProfile || !userProfile.is_member) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                      <div className="text-center">
+                        <svg className="w-12 h-12 mx-auto mb-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <p className="text-white font-semibold">Members Only</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded">
+                    {image.model_name}
+                  </div>
+
+                  {/* NSFW indicator */}
+                  {image.is_nsfw && (
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-red-600/80 text-white text-xs rounded font-semibold">
+                      NSFW
+                    </div>
+                  )}
+                </div>
               <div className="p-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 mb-3">
                   {image.prompt}
@@ -170,9 +284,10 @@ export default function GalleryPage() {
                   <span>{new Date(image.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
