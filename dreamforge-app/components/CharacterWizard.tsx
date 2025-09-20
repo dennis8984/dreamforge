@@ -1,20 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { generateWithNanoBanana } from '@/lib/nano-banana';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onDatasetReady: (images: string[]) => void; // dataset as data URLs or URLs
+  initialTab?: 'multi' | 'single' | 'desc';
 }
 
-export default function CharacterWizard({ open, onClose, onDatasetReady }: Props) {
-  const [tab, setTab] = useState<'multi' | 'single' | 'desc'>('multi');
+export default function CharacterWizard({ open, onClose, onDatasetReady, initialTab = 'multi' }: Props) {
+  const [tab, setTab] = useState<'multi' | 'single' | 'desc'>(initialTab);
   const [uploads, setUploads] = useState<string[]>([]);
   const [singleImage, setSingleImage] = useState<string | null>(null);
   const [desc, setDesc] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   if (!open) return null;
 
@@ -41,8 +48,15 @@ export default function CharacterWizard({ open, onClose, onDatasetReady }: Props
     try {
       const results: string[] = [];
       for (let i = 0; i < 3; i++) {
-        const r = await generateWithNanoBanana('portrait photo, same person, different angle', 'stable-diffusion-xl', { input_image: singleImage, strength: 0.7, enhance: true });
-        if (r.success && r.imageUrl) results.push(r.imageUrl);
+        const response = await fetch('/api/characters/synthesize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: singleImage })
+        });
+        const result = await response.json();
+        if (response.ok && result.imageUrl) {
+          results.push(result.imageUrl);
+        }
       }
       onDatasetReady([singleImage, ...results]);
       onClose();

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import CharacterSidebar from '@/components/CharacterSidebar';
 import StartCard from '@/components/StartCard';
@@ -16,11 +17,13 @@ interface Character {
   training_status?: string;
 }
 
-export default function AdminCharacterPage() {
+function CharacterAdminPageContent() {
+  const searchParams = useSearchParams();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userTier] = useState('admin');
   const [isAdmin, setIsAdmin] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [wizardMode, setWizardMode] = useState<'multi' | 'single' | 'desc'>('multi');
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataset, setDataset] = useState<string[] | null>(null);
@@ -39,6 +42,14 @@ export default function AdminCharacterPage() {
   }, []);
 
   useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'single' || mode === 'multi' || mode === 'desc') {
+      setWizardMode(mode);
+      setShowWizard(true);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     loadCharacters();
   }, []);
 
@@ -55,7 +66,10 @@ export default function AdminCharacterPage() {
     }
   };
 
-  const startCreateFlow = () => setShowWizard(true);
+  const openWizard = (mode: 'multi' | 'single' | 'desc') => {
+    setWizardMode(mode);
+    setShowWizard(true);
+  };
 
   const onDatasetReady = (images: string[]) => {
     setDataset(images);
@@ -146,9 +160,9 @@ export default function AdminCharacterPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StartCard title="Start with 4+ Images" subtitle="Upload a small dataset" onClick={() => { setShowWizard(true); }} />
-                <StartCard title="Start with One Image" subtitle="We will synthesize more" onClick={() => { setShowWizard(true); }} />
-                <StartCard title="Start with Description" subtitle="Generate a base dataset" onClick={() => { setShowWizard(true); }} />
+                <StartCard title="Start with 4+ Images" subtitle="Upload a small dataset" onClick={() => openWizard('multi')} />
+                <StartCard title="Start with One Image" subtitle="We will synthesize more" onClick={() => openWizard('single')} />
+                <StartCard title="Start with Description" subtitle="Generate a base dataset" onClick={() => openWizard('desc')} />
               </div>
 
               {dataset && (
@@ -166,7 +180,7 @@ export default function AdminCharacterPage() {
                       onClick={createCharacter}
                       className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
                     >
-                      {creating? 'Creating...' : 'Create & Train'}
+                      {creating ? 'Creating...' : 'Create & Train'}
                     </button>
                   </div>
                 </div>
@@ -205,7 +219,7 @@ export default function AdminCharacterPage() {
             <section>
               <h2 className="text-xl font-bold text-white mb-3">Quick Template</h2>
               <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                {['Character Sheet','Action Sheet','Emotion Sheet','Studio Turnaround Video','Scene Turnaround Video'].map((title) => (
+                {['Character Sheet', 'Action Sheet', 'Emotion Sheet', 'Studio Turnaround Video', 'Scene Turnaround Video'].map((title) => (
                   <div key={title} className="rounded-lg bg-gray-900/70 border border-gray-800 p-4 text-gray-300 text-center cursor-pointer hover:border-blue-600">
                     {title}
                   </div>
@@ -216,9 +230,17 @@ export default function AdminCharacterPage() {
         </div>
       </div>
 
-      <CharacterWizard open={showWizard} onClose={() => setShowWizard(false)} onDatasetReady={onDatasetReady} />
+      <CharacterWizard open={showWizard} onClose={() => setShowWizard(false)} onDatasetReady={onDatasetReady} initialTab={wizardMode} />
     </main>
   );
+}
+
+export default function AdminCharacterPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CharacterAdminPageContent />
+    </Suspense>
+  )
 }
 
 

@@ -106,9 +106,20 @@ export async function generateImageWithRunpod(
   });
 
   if (!RUNPOD_API_KEY || RUNPOD_API_KEY === 'your_runpod_api_key_here') {
+    const errorMessage = 'Runpod API key not configured. Please add your API key in Vercel environment variables. See RUNPOD_SETUP.md for instructions.';
+    console.error('='.repeat(80));
+    console.error('ERROR: Runpod API key not configured!');
+    console.error('The API key is still set to the placeholder value.');
+    console.error('');
+    console.error('To fix this:');
+    console.error('1. Get your API key from https://runpod.io');
+    console.error('2. For local dev: Update RUNPOD_API_KEY in .env.local');
+    console.error('3. For production: Set RUNPOD_API_KEY in Vercel environment variables');
+    console.error('4. See RUNPOD_SETUP.md for detailed instructions');
+    console.error('='.repeat(80));
     return {
       success: false,
-      error: 'Image generation service not available. Please contact support.'
+      error: errorMessage
     };
   }
 
