@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface GeneratedImage {
   id: string;
@@ -33,7 +33,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const [showPaywall, setShowPaywall] = useState(false);
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  // const supabase = createClientComponentClient();
 
   useEffect(() => {
     checkAuthAndLoadProfile();
@@ -47,28 +47,18 @@ export default function GalleryPage() {
 
   const checkAuthAndLoadProfile = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session) {
+      // For now, check localStorage for auth token
+      const token = localStorage.getItem('access_token');
+      if (token) {
         setIsAuthenticated(true);
-
-        // Load user profile to check membership status
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile) {
-          setUserProfile({
-            id: profile.id,
-            email: session.user.email || '',
-            subscription_tier: profile.subscription_tier || 'free',
-            is_member: profile.subscription_tier !== 'free'
-          });
-        }
+        // Default to free tier for now
+        setUserProfile({
+          id: 'demo-user',
+          email: 'user@example.com',
+          subscription_tier: 'free',
+          is_member: false
+        });
       } else {
-        // Non-authenticated users get limited access
         setUserProfile(null);
       }
     } catch (error) {
@@ -81,42 +71,34 @@ export default function GalleryPage() {
   const loadGalleryImages = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('generated_images')
-        .select(`
-          *,
-          characters!character_id (
-            name,
-            slug
-          )
-        `);
+      // For production deployment without Supabase, return sample data
+      // This will be replaced when Supabase is properly configured
+      const sampleImages: GeneratedImage[] = [
+        {
+          id: '1',
+          prompt: 'Professional adult model portrait',
+          image_url: '/api/placeholder/400/400',
+          model_name: 'DreamForge XL',
+          created_at: new Date().toISOString(),
+          likes: 234,
+          views: 1520,
+          is_nsfw: true,
+          user_id: 'user1'
+        },
+        {
+          id: '2',
+          prompt: 'Artistic nude photography',
+          image_url: '/api/placeholder/400/400',
+          model_name: 'NSFW Pro',
+          created_at: new Date().toISOString(),
+          likes: 189,
+          views: 982,
+          is_nsfw: true,
+          user_id: 'user2'
+        }
+      ];
 
-      // Apply filters
-      switch (filter) {
-        case 'trending':
-          query = query.order('views', { ascending: false });
-          break;
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'most-liked':
-          query = query.order('likes', { ascending: false });
-          break;
-        default:
-          query = query.order('created_at', { ascending: false });
-      }
-
-      // Limit to 50 images for performance
-      query = query.limit(50);
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error loading gallery:', error);
-        setImages([]);
-      } else {
-        setImages(data || []);
-      }
+      setImages(sampleImages);
     } catch (error) {
       console.error('Error loading gallery:', error);
       setImages([]);
