@@ -101,14 +101,18 @@ function CharacterAdminPageContent() {
 
       // 3) Queue training
       const trainRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true`, { method: 'POST' });
-      const train = await trainRes.json();
+      const trainData = await trainRes.json();
+
+      if (!trainRes.ok || !trainData.jobId) {
+        throw new Error(trainData.error || 'Failed to queue training job');
+      }
 
       // 4) Optimistic list refresh
       await loadCharacters();
 
       // 5) Poll training (simple)
       const poll = async () => {
-        const statusRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true&jobId=${train.jobId}`);
+        const statusRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true&jobId=${trainData.jobId}`);
         const data = await statusRes.json();
         if (data.status === 'ready' || data.status === 'failed') {
           loadCharacters();
