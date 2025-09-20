@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { generateWithNanoBanana } from '@/lib/nano-banana';
 
-// POST /api/characters/[id]/generate
+// POST /api/characters/[slug]/generate
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { id } = await params;
+  const { slug } = await params;
   try {
     const body = await request.json();
     const prompt: string = body?.prompt || '';
@@ -20,7 +20,7 @@ export async function POST(
     const { data: character, error: charErr } = await supabase
       .from('characters')
       .select('*')
-      .eq('id', id)
+      .eq('slug', slug)
       .single();
     if (charErr || !character) return NextResponse.json({ error: 'Character not found' }, { status: 404 });
 
@@ -37,7 +37,7 @@ export async function POST(
       .from('character_media')
       .insert([
         {
-          character_id: id,
+          character_id: character.id,
           type: 'image',
           url: result.imageUrl,
           is_hd: true,
