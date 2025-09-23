@@ -88,13 +88,13 @@ export default function Home() {
           </p>
         </div>
 
-        {isAuthenticated && (
+        {/* {isAuthenticated && (
           <GenerationPanel
             selectedModel={selectedModel}
             userTier={userTier}
             onGenerate={(result) => console.log('Generated:', result)}
           />
-        )}
+        )} */}
 
         <AIGallery
           userTier={userTier}
