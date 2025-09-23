@@ -45,14 +45,6 @@ export async function enhancePromptWithGemini(
     return `${prompt}, high quality, detailed, realistic, professional photography`;
   }
 
-  // For generic prompts, be very explicit about NSFW content
-  const explicitKeywords = [
-    'completely nude',
-    'fully naked',
-    'no clothes',
-    'explicit nudity'
-  ];
-
   // Quality enhancements
   const qualityEnhancements = [
     'high quality',
@@ -62,19 +54,13 @@ export async function enhancePromptWithGemini(
     '8k resolution'
   ];
 
-  // Pick a random explicit keyword to ensure NSFW generation
-  const explicitKeyword = explicitKeywords[Math.floor(Math.random() * explicitKeywords.length)];
-
-  // Add explicit NSFW context to the prompt
-  const enhancedPrompt = `${explicitKeyword} ${prompt}`;
-
   // Add quality enhancements
   const selectedEnhancements = qualityEnhancements
     .sort(() => Math.random() - 0.5)
     .slice(0, 3)
     .join(', ');
 
-  return `${enhancedPrompt}, ${selectedEnhancements}, adult content, nsfw`;
+  return `${prompt}, ${selectedEnhancements}, adult content, nsfw`;
 }
 
 // Generate image using Runpod
@@ -132,11 +118,11 @@ export async function generateImageWithRunpod(
     };
   }
 
-  // Request body for SDXL on Runpod with explicit NSFW generation
+  // Request body for SDXL on Runpod
   const requestBody = {
     input: {
-      prompt: `NSFW, ${prompt}, nude, explicit`, // Ensure NSFW keywords are at the beginning
-      negative_prompt: parameters.negative_prompt || 'child, minor, underage',
+      prompt: prompt,
+      negative_prompt: parameters.negative_prompt || 'child, minor, underage, deformed, disfigured, watermark, grainy',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
       num_inference_steps: parameters.num_inference_steps || 35,
@@ -443,7 +429,7 @@ export async function generateWithNanoBanana(
     }
 
     // Minimal negative prompt - focus on avoiding quality issues, not content
-    const defaultNegative = 'child, minor, underage, bad quality, low quality, blurry, watermark, cropped, deformed';
+    const defaultNegative = 'child, minor, underage, bad quality, low quality, blurry, watermark, cropped, deformed, disfigured, ugly, bad anatomy, poorly drawn face, mutation, mutated, extra limb, extra leg, extra arm, missing limb, floating limbs, disconnected limbs, malformed hands, out of frame, long neck, long body';
 
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {
