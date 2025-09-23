@@ -27,6 +27,7 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
+    setUploads([]); // Clear existing uploads
     Array.from(files).forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => setUploads((u) => [...u, reader.result as string]);

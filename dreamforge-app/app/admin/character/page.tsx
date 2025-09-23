@@ -72,6 +72,8 @@ function CharacterAdminPageContent() {
   };
 
   const openWizard = (mode: 'multi' | 'single' | 'desc') => {
+    setDataset(null);
+    setNewName('');
     setWizardMode(mode);
     setShowWizard(true);
   };
