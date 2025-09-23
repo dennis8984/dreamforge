@@ -124,12 +124,12 @@ export async function generateImageWithRunpod(
   const requestBody = {
     input: {
       prompt: prompt,
-      negative_prompt: parameters.negative_prompt || 'child, minor, underage, deformed, disfigured, watermark, grainy, painting, drawing, cartoon, anime',
+      negative_prompt: parameters.negative_prompt || '3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
-      num_inference_steps: parameters.num_inference_steps || 50,
-      guidance_scale: parameters.guidance_scale || 7.5,
-      sampler: parameters.sampler || 'DPM++ 2M',
+      num_inference_steps: parameters.num_inference_steps || 40,
+      guidance_scale: parameters.guidance_scale || 5.5,
+      sampler: parameters.sampler || 'Euler a',
       seed: parameters.seed && parameters.seed !== -1 ? parameters.seed : Math.floor(Math.random() * 1000000),
       // Image-to-image parameters
       ...(parameters.input_image ? {
@@ -431,7 +431,7 @@ export async function generateWithNanoBanana(
     }
 
     // Minimal negative prompt - focus on avoiding quality issues, not content
-    const defaultNegative = 'child, minor, underage, bad quality, low quality, blurry, watermark, cropped, deformed, disfigured, ugly, bad anatomy, poorly drawn face, mutation, mutated, extra limb, extra leg, extra arm, missing limb, floating limbs, disconnected limbs, malformed hands, out of frame, long neck, long body';
+    const defaultNegative = '3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage, bad quality, cropped, morphed, blender, 3d_model, oil';
 
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {
