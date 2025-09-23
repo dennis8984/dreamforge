@@ -45,13 +45,15 @@ export async function enhancePromptWithGemini(
     return `${prompt}, high quality, detailed, realistic, professional photography`;
   }
 
-  // Quality enhancements
+  // Quality enhancements for photorealism
   const qualityEnhancements = [
+    'photorealistic',
+    'hyperrealistic',
+    '8k resolution',
     'high quality',
     'detailed',
-    'realistic',
     'professional photography',
-    '8k resolution'
+    'ultra realistic'
   ];
 
   // Add quality enhancements
@@ -122,11 +124,11 @@ export async function generateImageWithRunpod(
   const requestBody = {
     input: {
       prompt: prompt,
-      negative_prompt: parameters.negative_prompt || 'child, minor, underage, deformed, disfigured, watermark, grainy',
+      negative_prompt: parameters.negative_prompt || 'child, minor, underage, deformed, disfigured, watermark, grainy, painting, drawing, cartoon, anime',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
-      num_inference_steps: parameters.num_inference_steps || 35,
-      guidance_scale: parameters.guidance_scale || 4.5,
+      num_inference_steps: parameters.num_inference_steps || 50,
+      guidance_scale: parameters.guidance_scale || 7.5,
       sampler: parameters.sampler || 'DPM++ 2M',
       seed: parameters.seed && parameters.seed !== -1 ? parameters.seed : Math.floor(Math.random() * 1000000),
       // Image-to-image parameters
