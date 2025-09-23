@@ -11,25 +11,79 @@ export default function GenerationPanel({ characterSlug, characterName, onGenera
   const [prompt, setPrompt] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'members'>('public');
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const pollForJobCompletion = async (jobId: string, characterId: string) => {
+    setStatusMessage('Job is in queue...');
+    const startTime = Date.now();
+    const pollInterval = 3000; // 3 seconds
+    const maxDuration = 120000; // 2 minutes
+
+    while (Date.now() - startTime < maxDuration) {
+      try {
+        const res = await fetch('/api/characters/poll-and-save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId, characterId, prompt, visibility }),
+        });
+
+        const data = await res.json();
+        
+        if (res.status === 202) { // Job is still processing
+          setStatusMessage(data.message || 'Processing...');
+        } else if (res.ok) { // Job complete
+          setStatusMessage('');
+          onGenerationComplete({ url: data.imageUrl });
+          return; // Exit loop
+        } else { // Error or job failed
+          throw new Error(data.error || 'Polling failed');
+        }
+      } catch (error) {
+        console.error(error);
+        alert(`An error occurred: ${(error as Error).message}`);
+        setStatusMessage('');
+        setLoading(false);
+        return; // Exit loop
+      }
+
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+
+    alert('Generation timed out. Please try again.');
+    setStatusMessage('');
+    setLoading(false);
+  };
 
   const generate = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
+    setStatusMessage('Sending request...');
     try {
       const res = await fetch(`/api/characters/${characterSlug}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, visibility }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        onGenerationComplete({ url: data.image_url });
-        setPrompt('');
-      } else {
-        alert('Failed to generate. Please try again.');
+
+      if (!res.ok) {
+        throw new Error('Failed to start generation job');
       }
-    } finally {
+
+      const data = await res.json();
+      if (data.jobId) {
+        await pollForJobCompletion(data.jobId, data.characterId);
+      } else if (data.image_url) {
+        onGenerationComplete({ url: data.image_url });
+      } else {
+        throw new Error('Invalid response from server');
+      }
+      
+    } catch (error) {
+      alert(`Failed to generate: ${(error as Error).message}`);
       setLoading(false);
+      setStatusMessage('');
+    } finally {
+      // setLoading(false) is handled by the polling function on completion/error
     }
   };
 
@@ -62,7 +116,7 @@ export default function GenerationPanel({ characterSlug, characterName, onGenera
           disabled={!prompt.trim() || loading}
           className="px-4 py-2 rounded bg-emerald-600 text-white disabled:opacity-50"
         >
-          {loading ? 'Generating...' : 'Generate'}
+          {loading ? statusMessage || 'Generating...' : 'Generate'}
         </button>
       </div>
     </div>

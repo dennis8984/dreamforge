@@ -28,11 +28,20 @@ export async function POST(
     const fullPrompt = styleHint ? `${styleHint}, ${prompt}` : prompt;
 
     const result = await generateWithNanoBanana(fullPrompt, 'stable-diffusion-xl', { enhance: true });
-    if (!result.success || !result.imageUrl) {
+    if (!result.success) {
       return NextResponse.json({ error: result.error || 'generation failed' }, { status: 500 });
     }
 
-    // Save media row
+    // Handle async job
+    if (result.jobId) {
+      return NextResponse.json({ jobId: result.jobId, characterId: character.id });
+    }
+
+    if (!result.imageUrl) {
+      return NextResponse.json({ error: 'Generation did not return an image URL or a job ID' }, { status: 500 });
+    }
+
+    // Save media row for direct result
     const { data: media, error: mediaErr } = await supabase
       .from('character_media')
       .insert([
