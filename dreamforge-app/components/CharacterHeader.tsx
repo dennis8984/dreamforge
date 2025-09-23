@@ -6,9 +6,10 @@ interface Props {
   tags?: string[];
   creator?: string;
   training_status?: 'draft'|'queued'|'training'|'ready'|'failed';
+  onGenerateClick: () => void;
 }
 
-export default function CharacterHeader({ name, avatar_url, tags = [], creator, training_status = 'ready' }: Props) {
+export default function CharacterHeader({ name, avatar_url, tags = [], creator, training_status = 'ready', onGenerateClick }: Props) {
   return (
     <div className="flex items-center gap-6">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -36,7 +37,7 @@ export default function CharacterHeader({ name, avatar_url, tags = [], creator, 
         </div>
       </div>
       <div className="flex gap-2">
-        <button className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm">Create Visual</button>
+        <button onClick={onGenerateClick} className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm">Create Visual</button>
         <button className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm">Generate Video</button>
       </div>
     </div>

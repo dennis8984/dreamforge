@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import CharacterHeader from '@/components/CharacterHeader';
 import CharacterMediaGrid from '@/components/CharacterMediaGrid';
+import GenerationPanel from '@/components/GenerationPanel';
 
 interface Character { id:string; slug:string; name:string; avatar_url?:string; tags?:string[]; training_status?:string }
 interface Media { id:string; type:'image'|'video'; url:string; is_hd:boolean; visibility:'public'|'members' }
@@ -14,6 +15,7 @@ export default function CharacterDetail({ params }: { params: { slug: string } }
   const [userTier] = useState('free');
   const [character, setCharacter] = useState<Character | null>(null);
   const [media, setMedia] = useState<Media[]>([]);
+  const [showGenerationPanel, setShowGenerationPanel] = useState(false);
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -29,6 +31,19 @@ export default function CharacterDetail({ params }: { params: { slug: string } }
     setMedia(data.media?.items || []);
   };
 
+  const handleGenerationComplete = (newImage: { url: string }) => {
+    // A bit of a hack to make it appear without full ID/props
+    const newMediaItem: Media = {
+      id: Math.random().toString(), // temporary unique key
+      url: newImage.url,
+      type: 'image',
+      is_hd: true,
+      visibility: 'public', // assumption
+    };
+    setMedia(prev => [newMediaItem, ...prev]);
+    setShowGenerationPanel(false);
+  };
+
   const isPaid = userTier !== 'free';
 
   return (
@@ -41,6 +56,14 @@ export default function CharacterDetail({ params }: { params: { slug: string } }
             avatar_url={character.avatar_url}
             tags={character.tags}
             training_status={(character as unknown as { training_status?: 'draft'|'queued'|'training'|'ready'|'failed' }).training_status}
+            onGenerateClick={() => setShowGenerationPanel(!showGenerationPanel)}
+          />
+        )}
+        {showGenerationPanel && character && (
+          <GenerationPanel
+            characterSlug={character.slug}
+            characterName={character.name}
+            onGenerationComplete={handleGenerationComplete}
           />
         )}
         <CharacterMediaGrid items={media} isPaidUser={isPaid} />
