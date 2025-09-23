@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function AuthPage() {
+function AuthRedirector() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -31,5 +31,13 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
       <p>Please wait, redirecting to login...</p>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-900 flex items-center justify-center text-white"><p>Loading...</p></div>}>
+      <AuthRedirector />
+    </Suspense>
   );
 }

@@ -47,6 +47,11 @@ function CharacterAdminPageContent() {
       setWizardMode(mode);
       setShowWizard(true);
     }
+    const createName = searchParams.get('create');
+    if (createName) {
+      setNewName(createName);
+      setShowWizard(true);
+    }
   }, [searchParams]);
 
   useEffect(() => {
