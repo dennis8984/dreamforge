@@ -16,7 +16,7 @@ export default function CharacterDetail({ params }: { params: { slug: string } }
   const [character, setCharacter] = useState<Character | null>(null);
   const [media, setMedia] = useState<Media[]>([]);
   const [showGenerationPanel, setShowGenerationPanel] = useState(false);
-  const authModalTrigger = useRef<AuthModalTrigger | undefined>();
+  const authModalTrigger = useRef<AuthModalTrigger | undefined>(undefined);
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
