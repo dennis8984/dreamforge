@@ -89,42 +89,76 @@ function CharacterAdminPageContent() {
     setCreating(true);
     try {
       // 1) Create character
+      console.log('Step 1: Creating character record...');
       const res = await fetch('/api/admin/characters?admin=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName, avatar_url: dataset?.[0], training_status: 'queued' })
       });
-      if (!res.ok) throw new Error('Create failed');
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(`Failed to create character record (status ${res.status}): ${errorData.error || res.statusText}`);
+      }
       const created = await res.json();
+      console.log('Step 1 successful. Character ID:', created.id);
+
 
       // 2) Attach dataset as media
       if (dataset && dataset.length) {
-        await fetch(`/api/admin/characters/${created.id}/media?admin=true`, {
+        console.log('Step 2: Attaching media dataset...');
+        const mediaRes = await fetch(`/api/admin/characters/${created.id}/media?admin=true`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(dataset.map((url) => ({ type: 'image', url })))
         });
+
+        if (!mediaRes.ok) {
+            const errorData = await mediaRes.json().catch(() => ({}));
+            throw new Error(`Failed to attach media (status ${mediaRes.status}): ${errorData.error || mediaRes.statusText}`);
+        }
+        console.log('Step 2 successful.');
       }
 
       // 3) Queue training
+      console.log('Step 3: Queuing training job...');
       const trainRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true`, { method: 'POST' });
+      if (!trainRes.ok) {
+        const errorData = await trainRes.json().catch(() => ({}));
+        throw new Error(`Failed to queue training job (status ${trainRes.status}): ${errorData.error || trainRes.statusText}`);
+      }
       const trainData = await trainRes.json();
 
-      if (!trainRes.ok || !trainData.jobId) {
-        throw new Error(trainData.error || 'Failed to queue training job');
+      if (!trainData.jobId) {
+        throw new Error(trainData.error || 'API did not return a training job ID.');
       }
+      console.log('Step 3 successful. Training Job ID:', trainData.jobId);
 
       // 4) Optimistic list refresh
+      console.log('Step 4: Refreshing character list...');
       await loadCharacters();
+      console.log('Step 4 successful.');
 
       // 5) Poll training (simple)
+      console.log('Step 5: Starting to poll for training status...');
       const poll = async () => {
-        const statusRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true&jobId=${trainData.jobId}`);
-        const data = await statusRes.json();
-        if (data.status === 'ready' || data.status === 'failed') {
-          loadCharacters();
-        } else {
-          setTimeout(poll, 2000);
+        try {
+            const statusRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true&jobId=${trainData.jobId}`);
+            if (!statusRes.ok) {
+                console.warn(`Polling failed with status ${statusRes.status}, will retry.`);
+                setTimeout(poll, 5000); // retry after longer delay
+                return;
+            }
+            const data = await statusRes.json();
+            console.log(`Polling: Job ${trainData.jobId} status is ${data.status}`);
+            if (data.status === 'ready' || data.status === 'failed') {
+              console.log('Polling complete. Final status:', data.status, '. Refreshing list.');
+              loadCharacters();
+            } else {
+              setTimeout(poll, 2000);
+            }
+        } catch(pollError) {
+            console.error('Error during polling, stopping poll.', pollError);
         }
       };
       setTimeout(poll, 2000);
@@ -133,8 +167,8 @@ function CharacterAdminPageContent() {
       setNewName('');
       setShowWizard(false);
     } catch (e) {
-      console.error(e);
-      alert('Failed to create character');
+      console.error('Character creation process failed:', e);
+      alert(`Failed to create character: ${(e as Error).message}`);
     } finally {
       setCreating(false);
     }
