@@ -1,17 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AuthModal from './AuthModal';
 import { signOut } from '@/lib/supabase';
+
+export interface AuthModalTrigger {
+  open: (mode: 'login' | 'register') => void;
+}
 
 interface HeaderProps {
   isAuthenticated: boolean;
   setIsAuthenticated: (value: boolean) => void;
   userTier: string;
+  authModalTrigger?: React.MutableRefObject<AuthModalTrigger | undefined>;
 }
 
-export default function Header({ isAuthenticated, setIsAuthenticated, userTier }: HeaderProps) {
+export default function Header({ isAuthenticated, setIsAuthenticated, userTier, authModalTrigger }: HeaderProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
@@ -25,6 +30,12 @@ export default function Header({ isAuthenticated, setIsAuthenticated, userTier }
     setAuthMode(mode);
     setShowAuthModal(true);
   };
+
+  useEffect(() => {
+    if (authModalTrigger) {
+      authModalTrigger.current = { open: openAuth };
+    }
+  }, [authModalTrigger]);
 
   return (
     <>

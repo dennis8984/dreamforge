@@ -90,7 +90,7 @@ function CharacterAdminPageContent() {
       const res = await fetch('/api/admin/characters?admin=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, avatar_url: dataset?.[0] })
+        body: JSON.stringify({ name: newName, avatar_url: dataset?.[0], training_status: 'queued' })
       });
       if (!res.ok) throw new Error('Create failed');
       const created = await res.json();

@@ -13,14 +13,20 @@ interface MediaItem {
 
 interface Props {
   items: MediaItem[];
+  isAuthenticated?: boolean;
   isPaidUser?: boolean;
+  onAuthClick: () => void;
 }
 
-export default function CharacterMediaGrid({ items, isPaidUser = false }: Props) {
+export default function CharacterMediaGrid({ items, isAuthenticated = false, isPaidUser = false, onAuthClick }: Props) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [preview, setPreview] = useState<MediaItem | null>(null);
 
   const handleOpen = (item: MediaItem) => {
+    if (!isAuthenticated) {
+      onAuthClick();
+      return;
+    }
     if (item.visibility === 'members' && !isPaidUser) {
       setShowPaywall(true);
       return;
@@ -28,10 +34,14 @@ export default function CharacterMediaGrid({ items, isPaidUser = false }: Props)
     setPreview(item);
   };
 
+  const displayedItems = isAuthenticated && !isPaidUser ? items.slice(0, 5) : items;
+  const isLimited = isAuthenticated && !isPaidUser && items.length > 5;
+  const blurClass = !isAuthenticated ? 'blur-md' : '';
+
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {items.map((m) => (
+        {displayedItems.map((m) => (
           <button
             key={m.id}
             type="button"
@@ -39,12 +49,22 @@ export default function CharacterMediaGrid({ items, isPaidUser = false }: Props)
             className="relative group rounded-lg overflow-hidden border border-gray-800 bg-gray-900/50 hover:scale-[1.01] transition"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={m.url} alt="media" className="w-full aspect-square object-cover" />
+            <img src={m.url} alt="media" className={`w-full aspect-square object-cover ${blurClass}`} />
             {m.visibility === 'members' && (
               <span className="absolute top-2 left-2 px-2 py-1 rounded bg-amber-600/20 text-amber-300 text-xs">Members</span>
             )}
           </button>
         ))}
+        {isLimited && (
+           <div 
+             className="relative group rounded-lg overflow-hidden border border-dashed border-gray-700 bg-gray-900/50 flex flex-col items-center justify-center text-center p-4 cursor-pointer"
+             onClick={() => setShowPaywall(true)}
+            >
+             <div className="text-2xl mb-2">✨</div>
+             <div className="font-semibold text-white">Unlock {items.length - 5} More</div>
+             <p className="text-sm text-gray-400">Upgrade to a paid plan to see all content.</p>
+           </div>
+        )}
       </div>
 
       {preview && (

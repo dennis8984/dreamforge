@@ -53,7 +53,10 @@ export async function enhancePromptWithGemini(
     'high quality',
     'detailed',
     'professional photography',
-    'ultra realistic'
+    'ultra realistic',
+    'realistic skin texture',
+    'skin pores',
+    'imperfect skin'
   ];
 
   // Add quality enhancements
@@ -124,7 +127,7 @@ export async function generateImageWithRunpod(
   const requestBody = {
     input: {
       prompt: prompt,
-      negative_prompt: parameters.negative_prompt || '3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage',
+      negative_prompt: parameters.negative_prompt || 'two girls, multiple girls, group, 3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage, perfect skin, airbrushed, smooth skin, flawless skin',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
       num_inference_steps: parameters.num_inference_steps || 40,
@@ -431,7 +434,7 @@ export async function generateWithNanoBanana(
     }
 
     // Minimal negative prompt - focus on avoiding quality issues, not content
-    const defaultNegative = '3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage, bad quality, cropped, morphed, blender, 3d_model, oil';
+    const defaultNegative = 'two girls, multiple girls, group, 3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage, bad quality, cropped, morphed, blender, 3d_model, oil, perfect skin, airbrushed, smooth skin, flawless skin';
 
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {
