@@ -43,38 +43,48 @@ alter table public.characters enable row level security;
 alter table public.character_media enable row level security;
 
 -- RLS Policies for characters (public read, admin write)
+drop policy if exists "Characters are viewable by everyone" on public.characters;
 create policy "Characters are viewable by everyone"
   on public.characters for select
-  using (true);
+  using (
+    training_status = 'ready' or public.is_admin()
+  );
 
+drop policy if exists "Characters are insertable by admins" on public.characters;
 create policy "Characters are insertable by admins"
   on public.characters for insert
-  with check (true); -- In production, add proper admin check
+  with check (public.is_admin());
 
+drop policy if exists "Characters are updatable by admins" on public.characters;
 create policy "Characters are updatable by admins"
   on public.characters for update
-  using (true); -- In production, add proper admin check
+  using (public.is_admin());
 
+drop policy if exists "Characters are deletable by admins" on public.characters;
 create policy "Characters are deletable by admins"
   on public.characters for delete
-  using (true); -- In production, add proper admin check
+  using (public.is_admin());
 
 -- RLS Policies for character_media (public read, admin write)
+drop policy if exists "Character media is viewable by everyone" on public.character_media;
 create policy "Character media is viewable by everyone"
   on public.character_media for select
   using (true);
 
+drop policy if exists "Character media is insertable by admins" on public.character_media;
 create policy "Character media is insertable by admins"
   on public.character_media for insert
-  with check (true); -- In production, add proper admin check
+  with check (public.is_admin());
 
+drop policy if exists "Character media is updatable by admins" on public.character_media;
 create policy "Character media is updatable by admins"
   on public.character_media for update
-  using (true); -- In production, add proper admin check
+  using (public.is_admin());
 
+drop policy if exists "Character media is deletable by admins" on public.character_media;
 create policy "Character media is deletable by admins"
   on public.character_media for delete
-  using (true); -- In production, add proper admin check
+  using (public.is_admin());
 
 -- Function to update updated_at timestamp
 create or replace function public.handle_updated_at()
@@ -86,6 +96,7 @@ end;
 $$ language plpgsql;
 
 -- Trigger for updated_at
+drop trigger if exists handle_characters_updated_at on public.characters;
 create trigger handle_characters_updated_at
   before update on public.characters
   for each row
