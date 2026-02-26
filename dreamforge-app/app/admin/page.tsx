@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
+import MissionControl from '@/components/admin/MissionControl';
 
 interface Model {
   id: string;
@@ -31,7 +32,7 @@ export default function AdminDashboard() {
   const [userTier] = useState('admin');
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'models' | 'create' | 'characters' | 'settings'>('models');
+  const [activeTab, setActiveTab] = useState<'models' | 'create' | 'characters' | 'settings' | 'openclaw'>('models');
 
   // Form state for new model
   const [newModel, setNewModel] = useState({
@@ -383,6 +384,16 @@ export default function AdminDashboard() {
             }`}
           >
             Settings
+          </button>
+          <button
+            onClick={() => setActiveTab('openclaw')}
+            className={`px-6 py-3 rounded-t-lg font-medium transition-colors ${
+              activeTab === 'openclaw'
+                ? 'bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            Mission Control
           </button>
         </div>
 
@@ -979,6 +990,8 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {activeTab === 'openclaw' && <MissionControl />}
         </div>
       </div>
     </main>
