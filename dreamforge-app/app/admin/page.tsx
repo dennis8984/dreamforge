@@ -60,20 +60,24 @@ export default function AdminDashboard() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAdminAuth = () => {
-      // Check if user is admin
+    const checkAdminAuth = async () => {
       const token = localStorage.getItem('access_token');
-      const adminKey = localStorage.getItem('admin_key');
-
-      // Simple admin check - in production, verify with backend
-      // Allow access with query parameter for demo or with token + admin key
-      if (window.location.search.includes('admin=true') ||
-          (token && adminKey === 'dreamforge_admin_2024')) {
-        setIsAuthenticated(true);
-        setIsAdmin(true);
-      } else {
-        // Redirect to login or show access denied
-        alert('Admin access required. Add ?admin=true to URL for demo access.');
+      if (!token) {
+        router.push('/auth?redirect=/admin');
+        return;
+      }
+      try {
+        const res = await fetch('/api/admin/characters', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          setIsAuthenticated(true);
+          setIsAdmin(true);
+        } else {
+          alert('Admin access required. Your account does not have admin privileges.');
+          router.push('/');
+        }
+      } catch {
         router.push('/');
       }
     };
@@ -83,13 +87,18 @@ export default function AdminDashboard() {
   }, [router]);
 
 
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem('access_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  };
+
   const loadModels = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/models?admin=true', {
-        headers: {
-          'x-admin-key': 'dreamforge_admin_2024'
-        }
+      const response = await fetch('/api/admin/models', {
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -106,11 +115,11 @@ export default function AdminDashboard() {
     e.preventDefault();
 
     try {
-      const response = await fetch('/api/admin/models?admin=true', {
+      const response = await fetch('/api/admin/models', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': 'dreamforge_admin_2024'
+          ...getAuthHeaders()
         },
         body: JSON.stringify({
           ...newModel,
@@ -158,11 +167,9 @@ export default function AdminDashboard() {
     if (!confirm('Are you sure you want to delete this model?')) return;
 
     try {
-      const response = await fetch(`/api/admin/models/${modelId}?admin=true`, {
+      const response = await fetch(`/api/admin/models/${modelId}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-key': 'dreamforge_admin_2024'
-        }
+        headers: getAuthHeaders()
       });
 
       if (response.ok) {
@@ -182,7 +189,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`/api/admin/models/${modelId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ is_premium: !model.is_premium })
       });
 
@@ -203,7 +210,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`/api/admin/models/${modelId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ is_featured: !model.is_featured })
       });
 
@@ -244,7 +251,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           prompt: currentPrompt || `nude ${newModel.name || 'woman'}, completely naked, no clothes, full nude, explicit nudity, professional photography, studio lighting, high quality, 8k`,
           model_id: 'stable-diffusion-xl',
@@ -815,7 +822,7 @@ export default function AdminDashboard() {
                     Create and manage character models for image generation
                   </p>
                   <a
-                    href="/admin/character?admin=true"
+                    href="/admin/character"
                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     + Create New Character
@@ -824,7 +831,7 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <a
-                    href="/admin/character?admin=true&mode=multi"
+                    href="/admin/character?mode=multi"
                     className="flex flex-col items-center gap-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-200 dark:border-gray-700"
                   >
                     <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
@@ -839,7 +846,7 @@ export default function AdminDashboard() {
                   </a>
 
                   <a
-                    href="/admin/character?admin=true&mode=single"
+                    href="/admin/character?mode=single"
                     className="flex flex-col items-center gap-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-200 dark:border-gray-700"
                   >
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
@@ -854,7 +861,7 @@ export default function AdminDashboard() {
                   </a>
 
                   <a
-                    href="/admin/character?admin=true&mode=text"
+                    href="/admin/character?mode=text"
                     className="flex flex-col items-center gap-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-200 dark:border-gray-700"
                   >
                     <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
@@ -917,7 +924,7 @@ export default function AdminDashboard() {
                       </div>
                     </a>
                     <a
-                      href="/admin/character?admin=true"
+                      href="/admin/character"
                       className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                       <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
