@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const search = request.nextUrl.searchParams.get('search') || '';
     const tag = request.nextUrl.searchParams.get('tag') || '';
+    const category = request.nextUrl.searchParams.get('category') || '';
     const page = parseInt(request.nextUrl.searchParams.get('page') || '1', 10);
     const pageSize = parseInt(request.nextUrl.searchParams.get('pageSize') || '24', 10);
 
@@ -21,6 +22,9 @@ export async function GET(request: NextRequest) {
     }
     if (tag) {
       query = query.contains('tags', [tag]);
+    }
+    if (category && category !== 'all') {
+      query = query.eq('category', category);
     }
 
     const from = (page - 1) * pageSize;

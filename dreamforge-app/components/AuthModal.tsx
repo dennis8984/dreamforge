@@ -27,6 +27,7 @@ export default function AuthModal({ mode, onClose, onSuccess }: AuthModalProps) 
         if (error) throw error;
         if (data?.user) {
           localStorage.setItem('supabase_user_id', data.user.id);
+          if (data.session) localStorage.setItem('access_token', data.session.access_token);
           onSuccess();
         }
       } else {
@@ -34,6 +35,7 @@ export default function AuthModal({ mode, onClose, onSuccess }: AuthModalProps) 
         if (error) throw error;
         if (data?.user) {
           localStorage.setItem('supabase_user_id', data.user.id);
+          if (data.session) localStorage.setItem('access_token', data.session.access_token);
           onSuccess();
         }
       }

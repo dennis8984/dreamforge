@@ -817,16 +817,42 @@ export default function AdminDashboard() {
               </h2>
 
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap justify-between items-center gap-4">
                   <p className="text-gray-600 dark:text-gray-400">
                     Create and manage character models for image generation
                   </p>
-                  <a
-                    href="/admin/character"
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    + Create New Character
-                  </a>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          let token = localStorage.getItem('access_token');
+                          const { supabase: sb } = await import('@/lib/supabase');
+                          if (!token && sb) {
+                            const { data: { session } } = await sb.auth.getSession();
+                            token = session?.access_token || null;
+                          }
+                          const res = await fetch('/api/admin/seed-characters', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                          });
+                          const data = await res.json();
+                          alert(data.success ? `Seeded ${data.results?.length || 0} characters` : data.error || 'Failed');
+                          if (data.success) window.location.href = '/characters';
+                        } catch (e) {
+                          alert('Seed failed: ' + (e as Error).message);
+                        }
+                      }}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                    >
+                      Seed 15 Secrets-Style Characters
+                    </button>
+                    <a
+                      href="/admin/character"
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      + Create New Character
+                    </a>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
