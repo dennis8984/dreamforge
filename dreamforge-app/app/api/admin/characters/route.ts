@@ -1,74 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
-import path from 'path';
-
-// Local fallback storage (development only)
-const CHARACTERS_FILE = path.join(process.cwd(), 'characters.json');
-
-function getLocalCharacters() {
-  try {
-    if (fs.existsSync(CHARACTERS_FILE)) {
-      const data = fs.readFileSync(CHARACTERS_FILE, 'utf-8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Error reading characters file:', error);
-  }
-  return [] as unknown[];
-}
-
-function saveLocalCharacters(characters: unknown[]) {
-  if (process.env.NODE_ENV === 'production') return false;
-  try {
-    fs.writeFileSync(CHARACTERS_FILE, JSON.stringify(characters, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing characters file:', error);
-    return false;
-  }
-}
-
-function isAdminAuthenticated(request: NextRequest): boolean {
-  const adminKey = request.headers.get('x-admin-key');
-  const referrer = request.headers.get('referer');
-  const isFromAdmin = referrer?.includes('admin=true');
-  return (
-    adminKey === 'dreamforge_admin_2024' ||
-    request.nextUrl.searchParams.get('admin') === 'true' ||
-    isFromAdmin === true
-  );
-}
+import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
 
 // GET /api/admin/characters
 export async function GET(request: NextRequest) {
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
   try {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('characters')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) return NextResponse.json(data);
-      if (error) console.error('Supabase error:', error);
+    const { data, error } = await supabase
+      .from('characters')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Failed to fetch characters' }, { status: 500 });
     }
-    const characters = getLocalCharacters();
-    return NextResponse.json(characters);
+    return NextResponse.json(data || []);
   } catch (error) {
     console.error('Error fetching characters:', error);
-    const characters = getLocalCharacters();
-    return NextResponse.json(characters);
+    return NextResponse.json({ error: 'Failed to fetch characters' }, { status: 500 });
   }
 }
 
 // POST /api/admin/characters
 export async function POST(request: NextRequest) {
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
   try {
@@ -82,20 +48,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure slug uniqueness
-    if (supabase) {
-      const { data: existing } = await supabase
-        .from('characters')
-        .select('id')
-        .eq('slug', slug)
-        .maybeSingle();
-      if (existing) {
-        slug = `${slug}-${id.substring(0, 6)}`;
-      }
-    } else {
-      const locals = getLocalCharacters();
-      if (locals.some((c: { slug: string }) => c.slug === slug)) {
-        slug = `${slug}-${id.substring(0, 6)}`;
-      }
+    const { data: existing } = await supabase
+      .from('characters')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+    if (existing) {
+      slug = `${slug}-${id.substring(0, 6)}`;
     }
 
     const now = new Date().toISOString();
@@ -115,25 +74,18 @@ export async function POST(request: NextRequest) {
       updated_at: now
     };
 
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('characters')
-        .insert([newCharacter])
-        .select()
-        .single();
-      if (!error && data) return NextResponse.json(data, { status: 201 });
-      if (error) console.error('Supabase insert error:', error);
+    const { data, error } = await supabase
+      .from('characters')
+      .insert([newCharacter])
+      .select()
+      .single();
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return NextResponse.json({ error: 'Failed to create character' }, { status: 500 });
     }
-
-    // Dev fallback
-    const characters = getLocalCharacters();
-    characters.unshift(newCharacter);
-    saveLocalCharacters(characters);
-    return NextResponse.json(newCharacter, { status: 201 });
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Error creating character:', error);
     return NextResponse.json({ error: 'Failed to create character' }, { status: 500 });
   }
 }
-
-// Remove duplicate re-definitions appended below by mistake

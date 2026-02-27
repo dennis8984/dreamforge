@@ -18,11 +18,12 @@ export default function MissionControlChat() {
 
   const loadHistory = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ admin: 'true' });
+      const params = new URLSearchParams();
       if (channel) params.set('channel', channel);
 
+      const token = localStorage.getItem('access_token');
       const res = await fetch(`/api/admin/openclaw/chat/history?${params}`, {
-        headers: { 'x-admin-key': 'dreamforge_admin_2024' },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
       setMessages(data.messages || []);
@@ -48,11 +49,12 @@ export default function MissionControlChat() {
 
     setSending(true);
     try {
-      const res = await fetch('/api/admin/openclaw/chat/send?admin=true', {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/admin/openclaw/chat/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': 'dreamforge_admin_2024',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: input,

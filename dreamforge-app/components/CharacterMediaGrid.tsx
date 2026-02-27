@@ -48,8 +48,21 @@ export default function CharacterMediaGrid({ items, isAuthenticated = false, isP
             onClick={() => handleOpen(m)}
             className="relative group rounded-lg overflow-hidden border border-gray-800 bg-gray-900/50 hover:scale-[1.01] transition"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={m.url} alt="media" className={`w-full aspect-square object-cover ${blurClass}`} />
+            {m.type === 'video' ? (
+              <>
+                <video src={m.url} className={`w-full aspect-square object-cover ${blurClass}`} muted preload="metadata" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={m.url} alt="media" className={`w-full aspect-square object-cover ${blurClass}`} />
+            )}
             {m.visibility === 'members' && (
               <span className="absolute top-2 left-2 px-2 py-1 rounded bg-amber-600/20 text-amber-300 text-xs">Members</span>
             )}

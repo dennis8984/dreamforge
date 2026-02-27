@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import type { Character } from '@/types/characters';
-
-function isAdminAuthenticated(request: NextRequest): boolean {
-  const adminKey = request.headers.get('x-admin-key');
-  const referrer = request.headers.get('referer');
-  const isFromAdmin = referrer?.includes('admin=true');
-  return (
-    adminKey === 'dreamforge_admin_2024' ||
-    request.nextUrl.searchParams.get('admin') === 'true' ||
-    isFromAdmin === true
-  );
-}
+import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
 
 // GET /api/admin/characters/[id] - Get single character
 export async function GET(
@@ -19,9 +8,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
 
   try {
     if (!supabase) {
@@ -56,9 +44,8 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
 
   try {
     if (!supabase) {
@@ -113,9 +100,8 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
 
   try {
     if (!supabase) {

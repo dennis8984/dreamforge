@@ -20,8 +20,9 @@ export default function MissionControlDashboard() {
 
   const checkHealth = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/openclaw/health?admin=true', {
-        headers: { 'x-admin-key': 'dreamforge_admin_2024' },
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/admin/openclaw/health', {
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
       setHealth(data.health);
@@ -49,11 +50,12 @@ export default function MissionControlDashboard() {
     setWaking(true);
     setWakeResult(null);
     try {
-      const res = await fetch('/api/admin/openclaw/hooks/wake?admin=true', {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/admin/openclaw/hooks/wake', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': 'dreamforge_admin_2024',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ text: 'wake', mode: 'normal' }),
       });

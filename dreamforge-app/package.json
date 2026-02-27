@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "verify-env": "tsx scripts/verify-env.ts",
@@ -13,14 +13,19 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@stripe/stripe-js": "^8.8.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.57.4",
     "@types/uuid": "^10.0.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.2",
     "@vercel/analytics": "^1.6.1",
     "next": "^15.5.12",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "uuid": "^13.0.0"
+    "stripe": "^20.4.0",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

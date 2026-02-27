@@ -4,10 +4,9 @@ import {
   checkRunpodJobStatus,
   NANO_BANANA_MODELS
 } from '@/lib/nano-banana';
+import { getServerSession } from '@/lib/auth-helpers';
 
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || '';
-
-export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +16,26 @@ export async function POST(request: NextRequest) {
     // Simple validation for text-to-image
     if (!prompt && !input_image) {
       return NextResponse.json({ error: 'Prompt or input image is required' }, { status: 400 });
+    }
+
+    // Debit moments if user is authenticated
+    const user = await getServerSession(request);
+    if (user) {
+      try {
+        const { getSupabaseAdmin } = await import('@/lib/supabase-server');
+        const supabaseAdmin = getSupabaseAdmin();
+        const { data } = await supabaseAdmin.rpc('debit_moments', {
+          p_user_id: user.id,
+          p_amount: 50,
+          p_type: 'image_generation',
+          p_desc: 'Image generation',
+        });
+        if (data?.[0] && !data[0].success) {
+          return NextResponse.json({ error: 'Insufficient moments. You need 50 moments for image generation.' }, { status: 402 });
+        }
+      } catch (e) {
+        console.error('Moments debit failed (non-blocking):', e);
+      }
     }
 
     // Get model configuration

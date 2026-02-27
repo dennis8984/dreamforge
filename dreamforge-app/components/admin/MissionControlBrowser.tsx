@@ -15,11 +15,12 @@ export default function MissionControlBrowser() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ admin: 'true' });
+      const params = new URLSearchParams();
       if (customUrl) params.set('url', customUrl);
 
+      const token = localStorage.getItem('access_token');
       const res = await fetch(`/api/admin/openclaw/control-ui/screenshot?${params}`, {
-        headers: { 'x-admin-key': 'dreamforge_admin_2024' },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
 
@@ -55,11 +56,12 @@ export default function MissionControlBrowser() {
         body.scrollY = 300;
       }
 
-      const res = await fetch('/api/admin/openclaw/control-ui/interact?admin=true', {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/admin/openclaw/control-ui/interact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': 'dreamforge_admin_2024',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       });

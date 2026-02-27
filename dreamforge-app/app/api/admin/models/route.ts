@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
 
 // Path to store models (in production, use a database)
 const MODELS_FILE = path.join(process.cwd(), 'models.json');
@@ -170,26 +171,10 @@ function saveModels(models: unknown[]) {
   }
 }
 
-// Simple admin authentication check
-function isAdminAuthenticated(request: NextRequest): boolean {
-  // In production, verify JWT token and admin role
-  const adminKey = request.headers.get('x-admin-key');
-
-  // For demo: check for admin key or query param
-  // Also check referrer for admin page access
-  const referrer = request.headers.get('referer');
-  const isFromAdmin = referrer?.includes('admin=true');
-
-  return adminKey === 'dreamforge_admin_2024' ||
-         request.nextUrl.searchParams.get('admin') === 'true' ||
-         isFromAdmin === true;
-}
-
 // GET /api/admin/models - Get all models
 export async function GET(request: NextRequest) {
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
 
   try {
     // Try to get from Supabase first if configured
@@ -220,9 +205,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/models - Create new model
 export async function POST(request: NextRequest) {
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
 
   try {
     const body = await request.json();

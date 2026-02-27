@@ -29,11 +29,12 @@ export default function MissionControlChannels() {
     setSending(true);
     setResult(null);
     try {
-      const res = await fetch('/api/admin/openclaw/hooks/agent?admin=true', {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/admin/openclaw/hooks/agent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': 'dreamforge_admin_2024',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: testMessage,

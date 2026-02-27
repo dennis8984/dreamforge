@@ -32,12 +32,9 @@ function CharacterAdminPageContent() {
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    const adminKey = localStorage.getItem('admin_key');
-    if (typeof window !== 'undefined' && (window.location.search.includes('admin=true') || adminKey === 'dreamforge_admin_2024')) {
+    if (token) {
       setIsAuthenticated(true);
       setIsAdmin(true);
-    } else if (token) {
-      setIsAuthenticated(true);
     }
   }, []);
 
@@ -61,7 +58,10 @@ function CharacterAdminPageContent() {
   const loadCharacters = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/characters?admin=true');
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/admin/characters', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
       if (res.ok) {
         const data = await res.json();
         setCharacters(data);
@@ -90,9 +90,10 @@ function CharacterAdminPageContent() {
     try {
       // 1) Create character
       console.log('Step 1: Creating character record...');
-      const res = await fetch('/api/admin/characters?admin=true', {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('/api/admin/characters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ name: newName, avatar_url: dataset?.[0], training_status: 'queued' })
       });
 
@@ -107,9 +108,9 @@ function CharacterAdminPageContent() {
       // 2) Attach dataset as media
       if (dataset && dataset.length) {
         console.log('Step 2: Attaching media dataset...');
-        const mediaRes = await fetch(`/api/admin/characters/${created.id}/media?admin=true`, {
+        const mediaRes = await fetch(`/api/admin/characters/${created.id}/media`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify(dataset.map((url) => ({ type: 'image', url })))
         });
 
@@ -122,7 +123,10 @@ function CharacterAdminPageContent() {
 
       // 3) Queue training
       console.log('Step 3: Queuing training job...');
-      const trainRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true`, { method: 'POST' });
+      const trainRes = await fetch(`/api/admin/characters/${created.id}/train`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
       if (!trainRes.ok) {
         const errorData = await trainRes.json().catch(() => ({}));
         throw new Error(`Failed to queue training job (status ${trainRes.status}): ${errorData.error || trainRes.statusText}`);
@@ -143,7 +147,9 @@ function CharacterAdminPageContent() {
       console.log('Step 5: Starting to poll for training status...');
       const poll = async () => {
         try {
-            const statusRes = await fetch(`/api/admin/characters/${created.id}/train?admin=true&jobId=${trainData.jobId}`);
+            const statusRes = await fetch(`/api/admin/characters/${created.id}/train?jobId=${trainData.jobId}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
             if (!statusRes.ok) {
                 console.warn(`Polling failed with status ${statusRes.status}, will retry.`);
                 setTimeout(poll, 5000); // retry after longer delay
@@ -179,7 +185,7 @@ function CharacterAdminPageContent() {
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Admin Access Required</h1>
-          <p className="text-gray-600 dark:text-gray-400">Add ?admin=true to the URL for demo access.</p>
+          <p className="text-gray-600 dark:text-gray-400">Please log in with an admin account to access this page.</p>
         </div>
       </main>
     );

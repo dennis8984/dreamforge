@@ -2,14 +2,17 @@
 
 interface Props {
   name: string;
+  slug?: string;
   avatar_url?: string;
   tags?: string[];
   creator?: string;
   training_status?: 'draft'|'queued'|'training'|'ready'|'failed';
   onGenerateClick: () => void;
+  onVideoClick?: () => void;
+  onVoiceClick?: () => void;
 }
 
-export default function CharacterHeader({ name, avatar_url, tags = [], creator, training_status = 'ready', onGenerateClick }: Props) {
+export default function CharacterHeader({ name, slug, avatar_url, tags = [], creator, training_status = 'ready', onGenerateClick, onVideoClick, onVoiceClick }: Props) {
   return (
     <div className="flex items-center gap-6">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -37,8 +40,12 @@ export default function CharacterHeader({ name, avatar_url, tags = [], creator, 
         </div>
       </div>
       <div className="flex gap-2">
+        {slug && (
+          <a href={`/chat?character=${slug}`} className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm">Chat</a>
+        )}
         <button onClick={onGenerateClick} className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm">Create Visual</button>
-        <button className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm">Generate Video</button>
+        <button onClick={onVideoClick} className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm">Generate Video</button>
+        <button onClick={onVoiceClick} className="px-3 py-2 rounded-lg bg-pink-600 hover:bg-pink-500 text-white text-sm">Voice Call</button>
       </div>
     </div>
   );

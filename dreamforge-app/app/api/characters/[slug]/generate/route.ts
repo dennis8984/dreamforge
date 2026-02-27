@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { generateWithNanoBanana } from '@/lib/nano-banana';
+import { getServerSession } from '@/lib/auth-helpers';
 
 // POST /api/characters/[slug]/generate
 export async function POST(
@@ -13,6 +14,27 @@ export async function POST(
     const prompt: string = body?.prompt || '';
     const visibility: 'public' | 'members' = body?.visibility === 'members' ? 'members' : 'public';
     if (!prompt) return NextResponse.json({ error: 'prompt required' }, { status: 400 });
+
+    // Debit moments if user is authenticated
+    const user = await getServerSession(request);
+    if (user) {
+      try {
+        const { getSupabaseAdmin } = await import('@/lib/supabase-server');
+        const supabaseAdmin = getSupabaseAdmin();
+        const { data } = await supabaseAdmin.rpc('debit_moments', {
+          p_user_id: user.id,
+          p_amount: 50,
+          p_type: 'image_generation',
+          p_ref: slug,
+          p_desc: `Image generation for ${slug}`,
+        });
+        if (data?.[0] && !data[0].success) {
+          return NextResponse.json({ error: 'Insufficient moments. You need 50 moments.' }, { status: 402 });
+        }
+      } catch (e) {
+        console.error('Moments debit failed (non-blocking):', e);
+      }
+    }
 
     if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import fs from 'fs';
 import path from 'path';
+import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
 
 // Path to store models
 const MODELS_FILE = path.join(process.cwd(), 'models.json');
@@ -35,28 +36,14 @@ function saveModels(models: unknown[]) {
   }
 }
 
-// Simple admin authentication check
-function isAdminAuthenticated(request: NextRequest): boolean {
-  const adminKey = request.headers.get('x-admin-key');
-
-  // Also check referrer for admin page access
-  const referrer = request.headers.get('referer');
-  const isFromAdmin = referrer?.includes('admin=true');
-
-  return adminKey === 'dreamforge_admin_2024' ||
-         request.nextUrl.searchParams.get('admin') === 'true' ||
-         isFromAdmin === true;
-}
-
 // PATCH /api/admin/models/[id] - Update model
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
 
   try {
     const body = await request.json();
@@ -115,9 +102,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  if (!isAdminAuthenticated(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin(request);
+  if (!isAuthUser(auth)) return auth;
 
   try {
     // Try to delete from Supabase first if configured

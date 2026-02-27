@@ -51,11 +51,14 @@ export default function Header({ isAuthenticated, setIsAuthenticated, userTier, 
               <Link href="/characters" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Characters
               </Link>
+              <Link href="/chat" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                Chat
+              </Link>
+              <Link href="/feed" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                Feed
+              </Link>
               <Link href="/gallery" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Gallery
-              </Link>
-              <Link href="/models" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                Models
               </Link>
               <Link href="/pricing" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Pricing
