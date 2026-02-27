@@ -32,13 +32,13 @@ EXCEPTION WHEN undefined_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
-  DROP POLICY IF EXISTS "Admin update models" ON ai_models FOR UPDATE USING (public.is_admin());
+  DROP POLICY IF EXISTS "Admin update models" ON ai_models;
   CREATE POLICY "Admin update models" ON ai_models FOR UPDATE USING (public.is_admin());
 EXCEPTION WHEN undefined_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
-  DROP POLICY IF EXISTS "Admin delete models" ON ai_models FOR DELETE USING (public.is_admin());
+  DROP POLICY IF EXISTS "Admin delete models" ON ai_models;
   CREATE POLICY "Admin delete models" ON ai_models FOR DELETE USING (public.is_admin());
 EXCEPTION WHEN undefined_table THEN NULL;
 END $$;

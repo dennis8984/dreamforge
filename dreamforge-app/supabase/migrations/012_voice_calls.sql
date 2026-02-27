@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS voice_call_sessions (
 CREATE INDEX IF NOT EXISTS idx_voice_sessions_user ON voice_call_sessions(user_id, created_at DESC);
 
 ALTER TABLE voice_call_sessions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users view own voice sessions" ON voice_call_sessions;
 CREATE POLICY "Users view own voice sessions" ON voice_call_sessions FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users create own voice sessions" ON voice_call_sessions;
 CREATE POLICY "Users create own voice sessions" ON voice_call_sessions FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users update own voice sessions" ON voice_call_sessions;
 CREATE POLICY "Users update own voice sessions" ON voice_call_sessions FOR UPDATE USING (auth.uid() = user_id);

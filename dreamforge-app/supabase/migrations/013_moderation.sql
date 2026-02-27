@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS moderation_log (
 ALTER TABLE content_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE moderation_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users create own reports" ON content_reports;
 CREATE POLICY "Users create own reports" ON content_reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
+DROP POLICY IF EXISTS "Admin manages reports" ON content_reports;
 CREATE POLICY "Admin manages reports" ON content_reports FOR ALL USING (public.is_admin());
+DROP POLICY IF EXISTS "Admin manages moderation log" ON moderation_log;
 CREATE POLICY "Admin manages moderation log" ON moderation_log FOR ALL USING (public.is_admin());

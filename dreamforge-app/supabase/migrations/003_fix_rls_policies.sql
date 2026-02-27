@@ -12,6 +12,7 @@ DROP POLICY IF EXISTS "Enable delete for authenticated users only" ON ai_models;
 DROP POLICY IF EXISTS "Enable all operations for service role" ON ai_models;
 DROP POLICY IF EXISTS "Enable insert for anon users" ON ai_models;
 DROP POLICY IF EXISTS "Enable update for anon users" ON ai_models;
+DROP POLICY IF EXISTS "Enable delete for anon users" ON ai_models;
 
 -- Create new policies
 

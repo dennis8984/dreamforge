@@ -61,11 +61,16 @@ CREATE INDEX IF NOT EXISTS idx_ledger_type ON moments_ledger(transaction_type);
 ALTER TABLE moments_ledger ENABLE ROW LEVEL SECURITY;
 ALTER TABLE moments_packages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users view own ledger" ON moments_ledger;
 CREATE POLICY "Users view own ledger" ON moments_ledger FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "System manages ledger" ON moments_ledger;
 CREATE POLICY "System manages ledger" ON moments_ledger FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin full access ledger" ON moments_ledger;
 CREATE POLICY "Admin full access ledger" ON moments_ledger FOR ALL USING (public.is_admin());
 
+DROP POLICY IF EXISTS "Anyone can view packages" ON moments_packages;
 CREATE POLICY "Anyone can view packages" ON moments_packages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin manages packages" ON moments_packages;
 CREATE POLICY "Admin manages packages" ON moments_packages FOR ALL USING (public.is_admin());
 
 -- Atomic debit function (with row lock)
@@ -75,7 +80,6 @@ DECLARE
   v_balance INTEGER;
   v_new_balance INTEGER;
 BEGIN
-  -- Lock the row
   SELECT moments_balance INTO v_balance
   FROM profiles WHERE id = p_user_id FOR UPDATE;
 

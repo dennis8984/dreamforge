@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_parent ON chat_messages(parent_message_i
 CREATE INDEX IF NOT EXISTS idx_memories_user_character ON user_memories(user_id, character_id);
 CREATE INDEX IF NOT EXISTS idx_participants_conversation ON chat_participants(conversation_id);
 
--- RLS policies
+-- RLS
 ALTER TABLE chat_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_participants ENABLE ROW LEVEL SECURITY;
@@ -104,38 +104,55 @@ ALTER TABLE chat_rate_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE character_personas ENABLE ROW LEVEL SECURITY;
 
 -- Conversations: users see only their own
+DROP POLICY IF EXISTS "Users view own conversations" ON chat_conversations;
 CREATE POLICY "Users view own conversations" ON chat_conversations FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users create own conversations" ON chat_conversations;
 CREATE POLICY "Users create own conversations" ON chat_conversations FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users update own conversations" ON chat_conversations;
 CREATE POLICY "Users update own conversations" ON chat_conversations FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users delete own conversations" ON chat_conversations;
 CREATE POLICY "Users delete own conversations" ON chat_conversations FOR DELETE USING (auth.uid() = user_id);
 
 -- Messages: users see messages in their conversations
+DROP POLICY IF EXISTS "Users view own messages" ON chat_messages;
 CREATE POLICY "Users view own messages" ON chat_messages FOR SELECT
   USING (EXISTS (SELECT 1 FROM chat_conversations WHERE id = conversation_id AND user_id = auth.uid()));
+DROP POLICY IF EXISTS "Users create messages in own conversations" ON chat_messages;
 CREATE POLICY "Users create messages in own conversations" ON chat_messages FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM chat_conversations WHERE id = conversation_id AND user_id = auth.uid()));
 
 -- Participants: users see participants in their conversations
+DROP POLICY IF EXISTS "Users view participants" ON chat_participants;
 CREATE POLICY "Users view participants" ON chat_participants FOR SELECT
   USING (EXISTS (SELECT 1 FROM chat_conversations WHERE id = conversation_id AND user_id = auth.uid()));
+DROP POLICY IF EXISTS "Users manage participants" ON chat_participants;
 CREATE POLICY "Users manage participants" ON chat_participants FOR ALL
   USING (EXISTS (SELECT 1 FROM chat_conversations WHERE id = conversation_id AND user_id = auth.uid()));
 
 -- Memories: users see only their own
+DROP POLICY IF EXISTS "Users view own memories" ON user_memories;
 CREATE POLICY "Users view own memories" ON user_memories FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users manage own memories" ON user_memories;
 CREATE POLICY "Users manage own memories" ON user_memories FOR ALL USING (auth.uid() = user_id);
 
 -- Rate limits: users see their own
+DROP POLICY IF EXISTS "Users view own rate limits" ON chat_rate_limits;
 CREATE POLICY "Users view own rate limits" ON chat_rate_limits FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "System manages rate limits" ON chat_rate_limits;
 CREATE POLICY "System manages rate limits" ON chat_rate_limits FOR ALL USING (true);
 
 -- Personas: publicly readable
+DROP POLICY IF EXISTS "Anyone can read personas" ON character_personas;
 CREATE POLICY "Anyone can read personas" ON character_personas FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin manages personas" ON character_personas;
 CREATE POLICY "Admin manages personas" ON character_personas FOR ALL USING (public.is_admin());
 
 -- Admin full access policies
+DROP POLICY IF EXISTS "Admin full access conversations" ON chat_conversations;
 CREATE POLICY "Admin full access conversations" ON chat_conversations FOR ALL USING (public.is_admin());
+DROP POLICY IF EXISTS "Admin full access messages" ON chat_messages;
 CREATE POLICY "Admin full access messages" ON chat_messages FOR ALL USING (public.is_admin());
+DROP POLICY IF EXISTS "Admin full access memories" ON user_memories;
 CREATE POLICY "Admin full access memories" ON user_memories FOR ALL USING (public.is_admin());
 
 -- Trigger: auto-update conversation on new message

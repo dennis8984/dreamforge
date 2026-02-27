@@ -54,21 +54,31 @@ ALTER TABLE feed_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_follows ENABLE ROW LEVEL SECURITY;
 
 -- Posts: public read, admin write
+DROP POLICY IF EXISTS "Anyone can read posts" ON feed_posts;
 CREATE POLICY "Anyone can read posts" ON feed_posts FOR SELECT USING (visibility = 'public');
+DROP POLICY IF EXISTS "Admin manages posts" ON feed_posts;
 CREATE POLICY "Admin manages posts" ON feed_posts FOR ALL USING (public.is_admin());
 
 -- Reactions: users manage own
+DROP POLICY IF EXISTS "Users view reactions" ON feed_reactions;
 CREATE POLICY "Users view reactions" ON feed_reactions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users create own reactions" ON feed_reactions;
 CREATE POLICY "Users create own reactions" ON feed_reactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users delete own reactions" ON feed_reactions;
 CREATE POLICY "Users delete own reactions" ON feed_reactions FOR DELETE USING (auth.uid() = user_id);
 
 -- Comments: public read, users manage own
+DROP POLICY IF EXISTS "Anyone reads comments" ON feed_comments;
 CREATE POLICY "Anyone reads comments" ON feed_comments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users create own comments" ON feed_comments;
 CREATE POLICY "Users create own comments" ON feed_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users delete own comments" ON feed_comments;
 CREATE POLICY "Users delete own comments" ON feed_comments FOR DELETE USING (auth.uid() = user_id);
 
 -- Follows: users manage own
+DROP POLICY IF EXISTS "Users view own follows" ON user_follows;
 CREATE POLICY "Users view own follows" ON user_follows FOR SELECT USING (auth.uid() = follower_user_id);
+DROP POLICY IF EXISTS "Users manage follows" ON user_follows;
 CREATE POLICY "Users manage follows" ON user_follows FOR ALL USING (auth.uid() = follower_user_id);
 
 -- Trigger: auto-update like_count
