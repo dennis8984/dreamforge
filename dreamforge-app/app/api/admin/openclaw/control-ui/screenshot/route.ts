@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { captureControlUIScreenshot } from '@/lib/openclaw';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   const width = parseInt(request.nextUrl.searchParams.get('width') || '1280', 10);
   const height = parseInt(request.nextUrl.searchParams.get('height') || '720', 10);

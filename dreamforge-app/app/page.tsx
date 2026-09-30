@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import SecretsLayout from '@/components/SecretsLayout';
 import SecretsBanner from '@/components/SecretsBanner';
 import SecretsCompanionCard from '@/components/SecretsCompanionCard';
+import GreeterHero from '@/components/greeter/GreeterHero';
 import { supabase } from '@/lib/supabase';
 
 interface Character {
@@ -90,6 +91,7 @@ export default function Home() {
   return (
     <SecretsLayout isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} userTier={userTier}>
       <div className="min-h-screen">
+        <GreeterHero isAuthenticated={isAuthenticated} userTier={userTier} />
         <SecretsBanner />
 
         <section className="px-6 py-10 max-w-7xl mx-auto">

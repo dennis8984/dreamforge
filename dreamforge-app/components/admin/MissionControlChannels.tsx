@@ -29,13 +29,10 @@ export default function MissionControlChannels() {
     setSending(true);
     setResult(null);
     try {
-      const token = localStorage.getItem('access_token');
       const res = await fetch('/api/admin/openclaw/hooks/agent', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           message: testMessage,
           channel: testChannel,

@@ -19,9 +19,8 @@ interface Character {
 
 function CharacterAdminPageContent() {
   const searchParams = useSearchParams();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated] = useState(true);
   const [userTier] = useState('admin');
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardMode, setWizardMode] = useState<'multi' | 'single' | 'desc'>('multi');
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -30,13 +29,7 @@ function CharacterAdminPageContent() {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
 
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      setIsAuthenticated(true);
-      setIsAdmin(true);
-    }
-  }, []);
+  // Auth is guaranteed by the admin layout server component
 
   useEffect(() => {
     const mode = searchParams.get('mode');
@@ -58,9 +51,8 @@ function CharacterAdminPageContent() {
   const loadCharacters = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
       const res = await fetch('/api/admin/characters', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();
@@ -90,10 +82,10 @@ function CharacterAdminPageContent() {
     try {
       // 1) Create character
       console.log('Step 1: Creating character record...');
-      const token = localStorage.getItem('access_token');
       const res = await fetch('/api/admin/characters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: newName, avatar_url: dataset?.[0], training_status: 'queued' })
       });
 
@@ -110,7 +102,8 @@ function CharacterAdminPageContent() {
         console.log('Step 2: Attaching media dataset...');
         const mediaRes = await fetch(`/api/admin/characters/${created.id}/media`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(dataset.map((url) => ({ type: 'image', url })))
         });
 
@@ -125,7 +118,7 @@ function CharacterAdminPageContent() {
       console.log('Step 3: Queuing training job...');
       const trainRes = await fetch(`/api/admin/characters/${created.id}/train`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
       });
       if (!trainRes.ok) {
         const errorData = await trainRes.json().catch(() => ({}));
@@ -148,7 +141,7 @@ function CharacterAdminPageContent() {
       const poll = async () => {
         try {
             const statusRes = await fetch(`/api/admin/characters/${created.id}/train?jobId=${trainData.jobId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
+                credentials: 'include',
             });
             if (!statusRes.ok) {
                 console.warn(`Polling failed with status ${statusRes.status}, will retry.`);
@@ -180,20 +173,9 @@ function CharacterAdminPageContent() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Admin Access Required</h1>
-          <p className="text-gray-600 dark:text-gray-400">Please log in with an admin account to access this page.</p>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} userTier={userTier} />
+      <Header isAuthenticated={isAuthenticated} setIsAuthenticated={() => {}} userTier={userTier} />
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex gap-6">

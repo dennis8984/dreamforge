@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendWakeHook } from '@/lib/openclaw';
 import type { WakeHookPayload } from '@/types/openclaw';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     const body: WakeHookPayload = await request.json();

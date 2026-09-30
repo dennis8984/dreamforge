@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 
 // GET /api/admin/characters/[id] - Get single character
 export async function GET(
@@ -8,8 +8,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     if (!supabase) {
@@ -44,8 +44,8 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     if (!supabase) {
@@ -100,8 +100,8 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     if (!supabase) {

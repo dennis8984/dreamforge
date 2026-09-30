@@ -25,8 +25,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Override Next.js portal positioning - remove fixed left/top constraints */
+/* Override Next.js portal positioning - prevent layout shift from dynamic left/top */
 nextjs-portal {
-  left: unset;
-  top: unset;
+  left: unset !important;
+  top: unset !important;
 }

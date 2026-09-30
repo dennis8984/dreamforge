@@ -3,11 +3,11 @@ import { sendAgentMessage } from '@/lib/openclaw';
 import { addToChatHistory } from '@/lib/openclaw-chat-store';
 import type { ChatSendPayload, ChatMessage } from '@/types/openclaw';
 import { v4 as uuidv4 } from 'uuid';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     const body: ChatSendPayload = await request.json();

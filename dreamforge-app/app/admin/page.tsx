@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import MissionControl from '@/components/admin/MissionControl';
+import { adminAuthClient } from '@/lib/admin-auth-client';
 
 interface Model {
   id: string;
@@ -27,8 +28,7 @@ interface Model {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthenticated] = useState(true);
   const [userTier] = useState('admin');
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,46 +59,20 @@ export default function AdminDashboard() {
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkAdminAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        router.push('/auth?redirect=/admin');
-        return;
-      }
-      try {
-        const res = await fetch('/api/admin/characters', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          setIsAuthenticated(true);
-          setIsAdmin(true);
-        } else {
-          alert('Admin access required. Your account does not have admin privileges.');
-          router.push('/');
-        }
-      } catch {
-        router.push('/');
-      }
-    };
+  // Auth is guaranteed by the admin layout server component
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadModels(); }, []);
 
-    checkAdminAuth();
-    loadModels();
-  }, [router]);
-
-
-  const getAuthHeaders = (): Record<string, string> => {
-    const token = localStorage.getItem('access_token');
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
+  const handleSignOut = async () => {
+    await adminAuthClient.signOut();
+    router.push('/admin-login');
   };
 
   const loadModels = async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/admin/models', {
-        headers: getAuthHeaders()
+        credentials: 'include'
       });
       if (response.ok) {
         const data = await response.json();
@@ -117,13 +91,10 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/admin/models', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders()
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           ...newModel,
-          // Let the API generate a UUID
           capabilities: {
             max_resolution: newModel.max_resolution,
             styles: newModel.styles,
@@ -169,7 +140,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`/api/admin/models/${modelId}`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -189,7 +160,8 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`/api/admin/models/${modelId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ is_premium: !model.is_premium })
       });
 
@@ -210,7 +182,8 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`/api/admin/models/${modelId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ is_featured: !model.is_featured })
       });
 
@@ -251,7 +224,8 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           prompt: currentPrompt || `nude ${newModel.name || 'woman'}, completely naked, no clothes, full nude, explicit nudity, professional photography, studio lighting, high quality, 8k`,
           model_id: 'stable-diffusion-xl',
@@ -317,37 +291,30 @@ export default function AdminDashboard() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Admin Access Required
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Please login with admin credentials
-          </p>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header
         isAuthenticated={isAuthenticated}
-        setIsAuthenticated={setIsAuthenticated}
+        setIsAuthenticated={() => {}}
         userTier={userTier}
       />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Manage AI models, settings, and configurations
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Admin Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage AI models, settings, and configurations
+            </p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+          >
+            Sign Out
+          </button>
         </div>
 
         {/* Tabs */}
@@ -824,27 +791,71 @@ export default function AdminDashboard() {
                   <div className="flex gap-3">
                     <button
                       onClick={async () => {
+                        if (!confirm('Seed 15 characters? With AI avatars this takes 5–10 min. Use Quick Seed for instant placeholder images.')) return;
+                        const btn = document.querySelector('[data-seed-btn]') as HTMLButtonElement;
+                        const originalText = btn?.textContent;
+                        if (btn) {
+                          btn.disabled = true;
+                          btn.textContent = 'Seeding... (5–10 min with AI)';
+                        }
                         try {
-                          let token = localStorage.getItem('access_token');
-                          const { supabase: sb } = await import('@/lib/supabase');
-                          if (!token && sb) {
-                            const { data: { session } } = await sb.auth.getSession();
-                            token = session?.access_token || null;
-                          }
                           const res = await fetch('/api/admin/seed-characters', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ quick: false }),
                           });
                           const data = await res.json();
-                          alert(data.success ? `Seeded ${data.results?.length || 0} characters` : data.error || 'Failed');
+                          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                          alert(`Seeded ${data.results?.length || 0} characters`);
                           if (data.success) window.location.href = '/characters';
                         } catch (e) {
                           alert('Seed failed: ' + (e as Error).message);
+                        } finally {
+                          if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = originalText || 'Seed 15 Secrets-Style Characters';
+                          }
                         }
                       }}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                      data-seed-btn
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
                     >
                       Seed 15 Secrets-Style Characters
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Quick seed 15 characters with placeholder images? (instant)')) return;
+                        const btn = document.querySelector('[data-quick-seed-btn]') as HTMLButtonElement;
+                        const originalText = btn?.textContent;
+                        if (btn) {
+                          btn.disabled = true;
+                          btn.textContent = 'Seeding...';
+                        }
+                        try {
+                          const res = await fetch('/api/admin/seed-characters', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ quick: true }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                          alert(`Seeded ${data.results?.length || 0} characters`);
+                          if (data.success) window.location.href = '/characters';
+                        } catch (e) {
+                          alert('Seed failed: ' + (e as Error).message);
+                        } finally {
+                          if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = originalText || 'Quick Seed (placeholders)';
+                          }
+                        }
+                      }}
+                      data-quick-seed-btn
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-medium disabled:opacity-50"
+                    >
+                      Quick Seed (placeholders)
                     </button>
                     <a
                       href="/admin/character"

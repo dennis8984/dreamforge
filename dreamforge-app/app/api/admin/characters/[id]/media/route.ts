@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 
 // POST /api/admin/characters/[id]/media
 export async function POST(
@@ -8,8 +8,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     const body = await request.json();
@@ -49,8 +49,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   await params; // not used directly; media ids provided in body
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     const body = await request.json();

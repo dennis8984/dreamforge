@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { generateWithNanoBanana, checkRunpodJobStatus } from '@/lib/nano-banana';
 
@@ -48,10 +48,21 @@ async function generateAvatar(prompt: string): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
-  const supabase = getSupabaseAdmin();
+  const body = await request.json().catch(() => ({}));
+  const quick = body?.quick === true;
+
+  let supabase;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (e) {
+    return NextResponse.json(
+      { error: 'Database not configured. Set SUPABASE_SERVICE_KEY and NEXT_PUBLIC_SUPABASE_URL.' },
+      { status: 503 }
+    );
+  }
 
   const results: { name: string; status: string; avatar_url?: string }[] = [];
 
@@ -63,10 +74,12 @@ export async function POST(request: NextRequest) {
 
     let avatarUrl: string | null = existing?.avatar_url || null;
     if (!avatarUrl) {
-      try {
-        avatarUrl = await generateAvatar(c.prompt);
-      } catch (e) {
-        console.error(`AI generation failed for ${c.name}:`, e);
+      if (!quick) {
+        try {
+          avatarUrl = await generateAvatar(c.prompt);
+        } catch (e) {
+          console.error(`AI generation failed for ${c.name}:`, e);
+        }
       }
       if (!avatarUrl) {
         avatarUrl = `https://picsum.photos/seed/${slug}-${i}/768/1024`;
@@ -97,9 +110,21 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       const { error } = await supabase.from('characters').update(charData).eq('id', existing.id);
+      if (error?.message?.includes('column') && error?.message?.includes('does not exist')) {
+        return NextResponse.json(
+          { error: 'Run migrations first: supabase db push or apply 011 and 014 from supabase/migrations/' },
+          { status: 500 }
+        );
+      }
       results.push({ name: c.name, status: error ? 'error' : 'updated', avatar_url: avatarUrl || undefined });
     } else {
       const { error } = await supabase.from('characters').insert([charData]);
+      if (error?.message?.includes('column') && error?.message?.includes('does not exist')) {
+        return NextResponse.json(
+          { error: 'Run migrations first: supabase db push or apply 011 and 014 from supabase/migrations/' },
+          { status: 500 }
+        );
+      }
       results.push({ name: c.name, status: error ? 'error' : 'created', avatar_url: avatarUrl || undefined });
     }
   }

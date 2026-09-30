@@ -18,9 +18,8 @@ export default function MissionControlBrowser() {
       const params = new URLSearchParams();
       if (customUrl) params.set('url', customUrl);
 
-      const token = localStorage.getItem('access_token');
       const res = await fetch(`/api/admin/openclaw/control-ui/screenshot?${params}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
 
@@ -56,13 +55,10 @@ export default function MissionControlBrowser() {
         body.scrollY = 300;
       }
 
-      const token = localStorage.getItem('access_token');
       const res = await fetch('/api/admin/openclaw/control-ui/interact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(body),
       });
       const data = await res.json();

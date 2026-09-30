@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getSessionCookie } from 'better-auth/cookies';
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ['/', '/auth', '/characters', '/models', '/pricing', '/gallery', '/feed'];
@@ -31,6 +32,11 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Allow BetterAuth API routes and admin login page through
+  if (pathname.startsWith('/api/auth') || pathname === '/admin-login') {
+    return response;
+  }
+
   // Check if route needs auth
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route + '/'));
   const isPublicApi = PUBLIC_API_ROUTES.some(route => pathname.startsWith(route));
@@ -44,10 +50,22 @@ export async function middleware(request: NextRequest) {
   // Public routes - allow through
   if (isPublicRoute || isPublicApi) return response;
 
-  // For auth-required and admin routes, we let the API route handlers
-  // handle auth verification since middleware can't easily access the
-  // full user profile. The middleware primarily handles security headers
-  // and route classification.
+  // Admin routes - require BetterAuth session cookie (bypassed in dev)
+  if (isAdminRoute || isAdminApi) {
+    if (process.env.NODE_ENV !== 'development') {
+      const sessionCookie = getSessionCookie(request);
+      if (!sessionCookie) {
+        if (isAdminApi) {
+          return NextResponse.json(
+            { error: 'Authentication required' },
+            { status: 401 }
+          );
+        }
+        return NextResponse.redirect(new URL('/admin-login', request.url));
+      }
+    }
+    return response;
+  }
 
   return response;
 }

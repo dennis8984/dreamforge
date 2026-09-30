@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 
 // Path to store models (in production, use a database)
 const MODELS_FILE = path.join(process.cwd(), 'models.json');
@@ -173,8 +173,8 @@ function saveModels(models: unknown[]) {
 
 // GET /api/admin/models - Get all models
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     // Try to get from Supabase first if configured
@@ -205,8 +205,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/models - Create new model
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     const body = await request.json();

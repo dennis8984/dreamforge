@@ -20,9 +20,8 @@ export default function MissionControlDashboard() {
 
   const checkHealth = useCallback(async () => {
     try {
-      const token = localStorage.getItem('access_token');
       const res = await fetch('/api/admin/openclaw/health', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       setHealth(data.health);
@@ -50,13 +49,10 @@ export default function MissionControlDashboard() {
     setWaking(true);
     setWakeResult(null);
     try {
-      const token = localStorage.getItem('access_token');
       const res = await fetch('/api/admin/openclaw/hooks/wake', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ text: 'wake', mode: 'normal' }),
       });
       const data = await res.json();

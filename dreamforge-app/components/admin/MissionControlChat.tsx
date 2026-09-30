@@ -21,9 +21,8 @@ export default function MissionControlChat() {
       const params = new URLSearchParams();
       if (channel) params.set('channel', channel);
 
-      const token = localStorage.getItem('access_token');
       const res = await fetch(`/api/admin/openclaw/chat/history?${params}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       setMessages(data.messages || []);
@@ -49,13 +48,10 @@ export default function MissionControlChat() {
 
     setSending(true);
     try {
-      const token = localStorage.getItem('access_token');
       const res = await fetch('/api/admin/openclaw/chat/send', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           message: input,
           channel: channel || undefined,

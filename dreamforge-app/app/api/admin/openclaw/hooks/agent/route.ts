@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendAgentMessage } from '@/lib/openclaw';
 import type { AgentHookPayload } from '@/types/openclaw';
-import { requireAdmin, isAuthUser } from '@/lib/auth-helpers';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!isAuthUser(auth)) return auth;
+  const auth = await requireBetterAuthAdmin(request);
+  if (!isAdminUser(auth)) return auth;
 
   try {
     const body: AgentHookPayload = await request.json();
