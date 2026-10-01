@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import AuthModal from './AuthModal';
 
 interface SecretsLayoutProps {
@@ -18,9 +18,10 @@ const RAIL = [
   { href: '/shorts', label: 'Shorts', icon: ShortsIcon },
   { href: '/chat', label: 'Chat', icon: ChatIcon },
   { href: '/gallery', label: 'Collection', icon: CollectionIcon },
-  { href: '/characters', label: 'Create', icon: CreateIcon },
+  { href: '/characters', label: 'Create Character', icon: CreateIcon },
   { href: '/characters', label: 'My AI', icon: HeartIcon },
-  { href: '/private', label: 'Private', icon: LockIcon },
+  { href: '/private', label: 'Private Content', icon: LockIcon },
+  { href: '/pricing', label: 'Premium', icon: GemIcon },
 ];
 
 const MOBILE = [
@@ -31,8 +32,12 @@ const MOBILE = [
   { href: '/pricing', label: 'Premium', icon: GemIcon },
 ];
 
+const CASTS = ['Girls', 'Anime', 'Guys'] as const;
+
 export default function SecretsLayout({ children, isAuthenticated, setIsAuthenticated, userTier }: SecretsLayoutProps) {
   const pathname = usePathname();
+  const search = useSearchParams();
+  const cast = search.get('cast') || 'Girls';
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -43,92 +48,90 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
     setMenuOpen(false);
   };
 
-  const active = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+  const active = (href: string, label: string) => {
+    if (label === 'My AI') return false;
+    return href === '/' ? pathname === '/' : pathname.startsWith(href);
+  };
 
   return (
-    <div className="min-h-screen bg-[#0c0c0e] text-white">
-      <aside className="hidden md:flex fixed inset-y-0 left-0 z-30 w-[76px] flex-col items-center bg-[#141416] border-r border-white/5 py-3">
+    <div className="min-h-screen bg-[#0e0e10] text-white">
+      <header className="sticky top-0 z-30 flex items-center gap-4 h-16 px-4 bg-[#121214] border-b border-white/5">
         <button
           type="button"
-          onClick={() => setMenuOpen(true)}
-          className="mb-4 p-2 rounded-lg text-gray-300 hover:bg-white/5"
+          className="p-2 text-gray-200 md:hidden"
           aria-label="Open menu"
+          onClick={() => setMenuOpen(true)}
         >
           <MenuIcon />
         </button>
-        <nav className="flex-1 flex flex-col items-center gap-1">
-          {RAIL.map((item) => {
-            const Icon = item.icon;
-            const on = active(item.href) && item.label !== 'My AI';
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                aria-label={item.label}
-                title={item.label}
-                className={`w-11 h-11 flex items-center justify-center rounded-xl ${
-                  on ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <Icon />
-              </Link>
-            );
-          })}
-        </nav>
-        <Link
-          href="/pricing"
-          aria-label="Premium"
-          title="Premium"
-          className="w-11 h-11 flex items-center justify-center rounded-xl text-amber-300 bg-amber-400/10"
-        >
-          <GemIcon />
+        <Link href="/" className="text-[22px] font-semibold tracking-tight shrink-0">
+          dream<span className="text-[#ff4d8d]">forge</span>
         </Link>
-      </aside>
+        <nav className="hidden sm:flex items-center gap-5 ml-6">
+          {CASTS.map((item) => (
+            <Link
+              key={item}
+              href={`/?cast=${item}`}
+              className={`text-sm pb-1 border-b-2 ${
+                cast === item ? 'border-[#ff4d8d] text-white' : 'border-transparent text-gray-300'
+              }`}
+            >
+              {item}
+            </Link>
+          ))}
+        </nav>
+        <div className="ml-auto flex items-center gap-2">
+          {!isAuthenticated ? (
+            <>
+              <button
+                type="button"
+                onClick={() => openAuth('register')}
+                className="px-4 py-2 rounded-full text-sm bg-[#ff4d8d] text-white font-medium"
+              >
+                Create Free Account
+              </button>
+              <button
+                type="button"
+                onClick={() => openAuth('login')}
+                className="px-4 py-2 rounded-full text-sm border border-white/20 text-white"
+              >
+                Login
+              </button>
+            </>
+          ) : (
+            <span className="text-xs uppercase tracking-wide text-gray-400">{userTier}</span>
+          )}
+        </div>
+      </header>
 
-      <div className="md:pl-[76px] flex flex-col min-h-screen">
-        <header className="sticky top-0 z-20 flex items-center gap-3 h-14 px-3 md:px-5 bg-[#0c0c0e]/95 border-b border-white/5">
-          <button
-            type="button"
-            className="md:hidden p-2 text-gray-300"
-            aria-label="Open menu"
-            onClick={() => setMenuOpen(true)}
-          >
-            <MenuIcon />
-          </button>
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            dream<span className="text-[#ff4d8d]">forge</span>
-          </Link>
-          <div className="ml-auto flex items-center gap-2">
-            {!isAuthenticated ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => openAuth('login')}
-                  className="px-4 py-1.5 rounded-full text-sm border border-white/15 text-white"
+      <div className="flex">
+        <aside className="hidden md:flex w-[220px] shrink-0 sticky top-16 h-[calc(100vh-4rem)] flex-col px-3 py-4 bg-[#121214]">
+          <nav className="flex flex-col gap-1">
+            {RAIL.map((item) => {
+              const Icon = item.icon;
+              const on = active(item.href, item.label);
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm ${
+                    on ? 'bg-[#2a2a2e] text-white' : 'text-gray-300 hover:bg-white/5'
+                  }`}
                 >
-                  Log in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openAuth('register')}
-                  className="px-4 py-1.5 rounded-full text-sm bg-[#ff4d8d] text-white font-medium"
-                >
-                  Join Free
-                </button>
-              </>
-            ) : (
-              <span className="text-xs uppercase tracking-wide text-gray-400">{userTier}</span>
-            )}
-          </div>
-        </header>
-
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
+                  <Icon />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+        <main className="flex-1 min-w-0 pb-20 md:pb-6">{children}</main>
       </div>
 
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-5 bg-[#141416] border-t border-white/5">
         {MOBILE.map((item) => {
           const Icon = item.icon;
-          const on = active(item.href);
+          const on = active(item.href, item.label);
           return (
             <Link
               key={item.label}
@@ -143,9 +146,9 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
       </nav>
 
       {menuOpen && (
-        <div className="fixed inset-0 z-40 flex">
+        <div className="fixed inset-0 z-40 flex md:hidden">
           <button type="button" className="flex-1 bg-black/60" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
-          <div className="w-64 bg-[#141416] h-full p-4 flex flex-col gap-1 border-l border-white/5 order-first">
+          <div className="w-64 bg-[#141416] h-full p-4 flex flex-col gap-1 order-first">
             {RAIL.map((item) => (
               <Link
                 key={item.label}
@@ -156,9 +159,6 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
                 {item.label}
               </Link>
             ))}
-            <Link href="/pricing" onClick={() => setMenuOpen(false)} className="px-3 py-2.5 rounded-lg text-sm text-amber-300">
-              Premium
-            </Link>
           </div>
         </div>
       )}
@@ -225,7 +225,7 @@ function CollectionIcon() {
 function CreateIcon() {
   return (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeWidth={1.8} d="M12 5v14M5 12h14" />
+      <path strokeLinecap="round" strokeWidth={1.8} d="M15 4l2 2-9 9H6v-2l9-9z" />
     </svg>
   );
 }

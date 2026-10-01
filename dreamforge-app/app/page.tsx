@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import SecretsLayout from '@/components/SecretsLayout';
 import { supabase } from '@/lib/supabase';
 
@@ -18,8 +19,7 @@ interface Character {
   gender?: string;
 }
 
-const CASTS = ['Girls', 'Anime', 'Guys'] as const;
-const CHIPS = ['All', 'New', '21–29', '30+', 'Blonde', 'Brunette', 'Redhead'];
+const CHIPS = ['All', 'Private', '21–29', '30+', 'Blonde', 'Brunette', 'Redhead'];
 const SLIDES = [
   {
     title: 'A still, then a five-second clip',
@@ -57,7 +57,9 @@ export default function Home() {
   const [userTier, setUserTier] = useState('free');
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cast, setCast] = useState<(typeof CASTS)[number]>('Girls');
+  const search = useSearchParams();
+  const castParam = search.get('cast');
+  const cast = castParam === 'Anime' || castParam === 'Guys' ? castParam : 'Girls';
   const [chip, setChip] = useState('All');
   const [query, setQuery] = useState('');
   const [slide, setSlide] = useState(0);
@@ -118,115 +120,120 @@ export default function Home() {
 
   return (
     <SecretsLayout isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} userTier={userTier}>
-      <div className="px-4 md:px-8 py-5 max-w-6xl mx-auto">
-        <div className="flex gap-2 mb-4">
-          {CASTS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setCast(item)}
-              className={`px-3 py-1 text-sm border-b-2 ${
-                cast === item ? 'border-[#ff4d8d] text-white' : 'border-transparent text-gray-500'
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl bg-[#1a1020] min-h-[180px] mb-6">
-          <div className="p-6 md:p-8 max-w-md">
-            <h1 className="text-2xl font-semibold mb-2">{SLIDES[slide].title}</h1>
-            <p className="text-sm text-gray-300 mb-4">{SLIDES[slide].body}</p>
-            <Link href={SLIDES[slide].href} className="inline-block px-4 py-2 rounded-full bg-[#ff4d8d] text-sm font-medium">
-              {SLIDES[slide].cta}
+      <div className="px-3 md:px-5 py-4">
+        <div className="relative overflow-hidden rounded-[18px] h-[220px] sm:h-[320px] lg:h-[420px] mb-5 bg-gradient-to-r from-[#3a1028] via-[#1a1230] to-[#102033]">
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+            <p className="text-3xl sm:text-5xl font-semibold mb-2">{SLIDES[slide].title}</p>
+            <p className="text-sm text-white/80 mb-5 max-w-md">{SLIDES[slide].body}</p>
+            <Link href={SLIDES[slide].href} className="px-6 py-2.5 rounded-full bg-[#f5c518] text-black text-sm font-semibold">
+              Join Now
             </Link>
           </div>
-          <div className="absolute bottom-3 left-6 flex gap-1.5">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             {SLIDES.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 aria-label={`Banner ${i + 1}`}
                 onClick={() => setSlide(i)}
-                className={`h-1.5 rounded-full ${i === slide ? 'w-5 bg-[#ff4d8d]' : 'w-1.5 bg-white/30'}`}
+                className={`h-1 rounded-full ${i === slide ? 'w-8 bg-white' : 'w-6 bg-white/40'}`}
               />
             ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-lg">
-            Explore <span className="text-[#ff4d8d]">characters</span>
-          </h2>
+        <h2 className="text-xl mb-3">
+          Explore <span className="text-[#ff4d8d]">Featured Characters</span>
+        </h2>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-4">
+          <label className="flex items-center gap-2 px-4 h-10 rounded-full bg-[#1c1c1f] shrink-0 w-44">
+            <span className="sr-only">Search</span>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search"
+              className="w-full bg-transparent text-sm outline-none placeholder:text-gray-500"
+            />
+          </label>
+          {CHIPS.map((item) =>
+            item === 'Private' ? (
+              <Link
+                key={item}
+                href="/private"
+                className="shrink-0 px-4 h-10 rounded-full text-sm border border-transparent bg-[#1c1c1f] text-gray-200 inline-flex items-center"
+              >
+                Private Content
+              </Link>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setChip(item)}
+                className={`shrink-0 px-4 h-10 rounded-full text-sm border ${
+                  chip === item ? 'border-[#ff4d8d] text-white' : 'border-transparent bg-[#1c1c1f] text-gray-200'
+                }`}
+              >
+                {item}
+              </button>
+            )
+          )}
         </div>
 
-        <label className="flex items-center gap-2 px-3 h-10 rounded-full bg-[#1c1c1f] mb-3">
-          <span className="sr-only">Search</span>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-500"
-          />
-        </label>
-
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-4">
-          {CHIPS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setChip(item)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-sm ${
-                chip === item ? 'bg-white text-black' : 'bg-[#1c1c1f] text-gray-300'
-              }`}
-            >
-              {item}
-            </button>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+          {loading
+            ? Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] rounded-[18px] bg-[#1c1c1f] animate-pulse" />
+              ))
+            : tiles(visible)}
         </div>
-
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] rounded-2xl bg-[#1c1c1f] animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            <Link href="/shorts" className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-[#241028] flex items-end p-3">
-              <span className="text-sm font-semibold">Shorts</span>
-            </Link>
-            {visible.map((c) => (
-              <Portrait key={c.id} character={c} />
-            ))}
-            <Link href="/private" className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-[#1c1c1f] flex items-end p-3">
-              <span className="text-sm">Private</span>
-            </Link>
-          </div>
-        )}
 
         {!loading && visible.length === 0 && (
-          <p className="text-sm text-gray-500 py-8">No characters in this filter.</p>
+          <p className="text-sm text-gray-500 py-6">No characters in this filter yet. Cards use DreamForge portraits when they exist.</p>
         )}
       </div>
     </SecretsLayout>
   );
 }
 
+function tiles(characters: Character[]) {
+  const nodes = [
+    <Link
+      key="shorts"
+      href="/shorts"
+      className="relative aspect-[3/4] rounded-[18px] overflow-hidden bg-[#2a1038] border border-[#c084fc] flex items-end justify-center pb-4"
+    >
+      <span className="px-5 py-2 rounded-full bg-[#ff4d8d] text-sm font-medium">Watch</span>
+    </Link>,
+    <Link
+      key="private"
+      href="/pricing"
+      className="relative aspect-[3/4] rounded-[18px] overflow-hidden bg-[#241018] border border-[#ff4d8d] flex items-end justify-center pb-4"
+    >
+      <span className="px-5 py-2 rounded-full bg-[#ff4d8d] text-sm font-medium">Unlock</span>
+    </Link>,
+  ];
+  const portraits = characters.map((character) => <Portrait key={character.id} character={character} />);
+  const first = portraits.slice(0, 2);
+  const rest = portraits.slice(2);
+  return [...first, nodes[0], ...rest.slice(0, 4), nodes[1], ...rest.slice(4)];
+}
+
 function Portrait({ character }: { character: Character }) {
   const n = ageNumber(character.age);
   return (
-    <Link href={`/character/${character.slug}`} className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-[#1c1c1f] block">
+    <Link href={`/character/${character.slug}`} className="relative aspect-[3/4] rounded-[18px] overflow-hidden bg-[#1c1c1f] block">
       {character.avatar_url ? (
         <img src={character.avatar_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      ) : null}
+      ) : (
+        <span className="absolute inset-0 bg-gradient-to-b from-[#2a2438] to-[#121216]" />
+      )}
       {character.is_new && (
         <span className="absolute top-2 left-2 text-[10px] font-semibold bg-[#ff4d8d] px-1.5 py-0.5 rounded">NEW</span>
       )}
-      <span className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-sm font-medium">
+      <span className="absolute inset-x-0 bottom-0 px-3 py-3 bg-gradient-to-t from-black/80 to-transparent text-[15px] font-medium">
         {character.name}
-        {n !== null ? <span className="ml-1 font-normal text-white/80">{n}</span> : null}
+        {n !== null ? <span className="ml-1.5 font-normal text-white/80">{n}</span> : null}
       </span>
     </Link>
   );
