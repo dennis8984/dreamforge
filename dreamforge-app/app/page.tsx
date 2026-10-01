@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import SecretsLayout from '@/components/SecretsLayout';
@@ -41,6 +41,14 @@ const SLIDES = [
   },
 ];
 
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0e0e10]" />}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
 function ageNumber(age?: string): number | null {
   if (!age) return null;
   const n = parseInt(age, 10);
@@ -52,7 +60,7 @@ function isAtLeast21(character: Character): boolean {
   return n === null || n >= 21;
 }
 
-export default function Home() {
+function HomeContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userTier, setUserTier] = useState('free');
   const [characters, setCharacters] = useState<Character[]>([]);

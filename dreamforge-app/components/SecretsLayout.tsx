@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import AuthModal from './AuthModal';
@@ -34,10 +34,31 @@ const MOBILE = [
 
 const CASTS = ['Girls', 'Anime', 'Guys'] as const;
 
+function CastLinks({ cast }: { cast: string }) {
+  return (
+    <nav className="hidden sm:flex items-center gap-5 ml-6">
+      {CASTS.map((item) => (
+        <Link
+          key={item}
+          href={`/?cast=${item}`}
+          className={`text-sm pb-1 border-b-2 ${
+            cast === item ? 'border-[#ff4d8d] text-white' : 'border-transparent text-gray-300'
+          }`}
+        >
+          {item}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function CastSwitch() {
+  const search = useSearchParams();
+  return <CastLinks cast={search.get('cast') || 'Girls'} />;
+}
+
 export default function SecretsLayout({ children, isAuthenticated, setIsAuthenticated, userTier }: SecretsLayoutProps) {
   const pathname = usePathname();
-  const search = useSearchParams();
-  const cast = search.get('cast') || 'Girls';
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -67,19 +88,9 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
         <Link href="/" className="text-[22px] font-semibold tracking-tight shrink-0">
           dream<span className="text-[#ff4d8d]">forge</span>
         </Link>
-        <nav className="hidden sm:flex items-center gap-5 ml-6">
-          {CASTS.map((item) => (
-            <Link
-              key={item}
-              href={`/?cast=${item}`}
-              className={`text-sm pb-1 border-b-2 ${
-                cast === item ? 'border-[#ff4d8d] text-white' : 'border-transparent text-gray-300'
-              }`}
-            >
-              {item}
-            </Link>
-          ))}
-        </nav>
+        <Suspense fallback={<CastLinks cast="Girls" />}>
+          <CastSwitch />
+        </Suspense>
         <div className="ml-auto flex items-center gap-2">
           {!isAuthenticated ? (
             <>
