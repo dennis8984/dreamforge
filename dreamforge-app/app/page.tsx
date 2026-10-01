@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import SecretsLayout from '@/components/SecretsLayout';
+import HomeStory from '@/components/HomeStory';
 import { supabase } from '@/lib/supabase';
 
 interface Character {
@@ -199,6 +200,7 @@ function HomeContent() {
         {!loading && visible.length === 0 && (
           <p className="text-sm text-gray-500 py-6">No characters in this filter yet. Cards use DreamForge portraits when they exist.</p>
         )}
+        <HomeStory />
       </div>
     </SecretsLayout>
   );

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Dancing_Script } from "next/font/google";
+import { Geist, Geist_Mono, Dancing_Script, Poppins } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { Suspense } from 'react';
@@ -22,6 +22,12 @@ const dancingScript = Dancing_Script({
   subsets: ["latin"],
 });
 
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "DreamForge - AI Companions & Art",
   description: "Chat with AI companions, generate stunning art, and create your own characters",
@@ -35,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${dancingScript.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${dancingScript.variable} ${poppins.variable} antialiased`}
       >
         <EntryModal />
         {children}

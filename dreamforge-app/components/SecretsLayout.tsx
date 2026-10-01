@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import AuthModal from './AuthModal';
+import SiteFooter from './SiteFooter';
 
 interface SecretsLayoutProps {
   children: React.ReactNode;
@@ -41,8 +42,8 @@ function CastLinks({ cast }: { cast: string }) {
         <Link
           key={item}
           href={`/?cast=${item}`}
-          className={`text-sm pb-1 border-b-2 ${
-            cast === item ? 'border-[#ff4d8d] text-white' : 'border-transparent text-gray-300'
+          className={`flex items-center justify-center h-16 min-w-[93px] px-2 text-[13px] font-semibold leading-[19.5px] ${
+            cast === item ? 'text-[#f97187]' : 'text-white'
           }`}
         >
           {item}
@@ -97,14 +98,14 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
               <button
                 type="button"
                 onClick={() => openAuth('register')}
-                className="px-4 py-2 rounded-full text-sm bg-[#ff4d8d] text-white font-medium"
+                className="h-[34px] px-[13px] rounded-full text-[13px] font-semibold leading-[18px] bg-[#ee5876] text-white"
               >
                 Create Free Account
               </button>
               <button
                 type="button"
                 onClick={() => openAuth('login')}
-                className="px-4 py-2 rounded-full text-sm border border-white/20 text-white"
+                className="h-[34px] px-[13px] rounded-full text-[13px] font-semibold leading-[18px] border border-white/20 text-white"
               >
                 Login
               </button>
@@ -125,8 +126,8 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm ${
-                    on ? 'bg-[#2a2a2e] text-white' : 'text-gray-300 hover:bg-white/5'
+                  className={`flex items-center gap-2 h-10 px-3 rounded-[10px] text-[12px] font-medium leading-4 ${
+                    on ? 'bg-[#303030] text-white' : 'text-[#d1d1d1] hover:bg-white/5'
                   }`}
                 >
                   <Icon />
@@ -138,6 +139,8 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
         </aside>
         <main className="flex-1 min-w-0 pb-20 md:pb-6">{children}</main>
       </div>
+
+      <SiteFooter />
 
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-5 bg-[#141416] border-t border-white/5">
         {MOBILE.map((item) => {
@@ -190,21 +193,21 @@ export default function SecretsLayout({ children, isAuthenticated, setIsAuthenti
 
 function MenuIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
 function HomeIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z" />
     </svg>
   );
 }
 function DiscoverIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <circle cx="12" cy="12" r="8" strokeWidth={1.8} />
       <path strokeLinecap="round" strokeWidth={1.8} d="m14.5 9.5-1.2 4.8-4.8 1.2 1.2-4.8 4.8-1.2z" />
     </svg>
@@ -212,7 +215,7 @@ function DiscoverIcon() {
 }
 function ShortsIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <rect x="4" y="6" width="16" height="12" rx="2" strokeWidth={1.8} />
       <path strokeLinecap="round" strokeWidth={1.8} d="M10 9.5v5l4.5-2.5L10 9.5z" />
     </svg>
@@ -220,14 +223,14 @@ function ShortsIcon() {
 }
 function ChatIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18.5 4 21V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8A2.5 2.5 0 0 1 17.5 17H6z" />
     </svg>
   );
 }
 function CollectionIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <rect x="4" y="5" width="16" height="14" rx="2" strokeWidth={1.8} />
       <path strokeLinecap="round" strokeWidth={1.8} d="M4 15l4-3 3 2 3-4 6 5" />
     </svg>
@@ -235,21 +238,21 @@ function CollectionIcon() {
 }
 function CreateIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeWidth={1.8} d="M15 4l2 2-9 9H6v-2l9-9z" />
     </svg>
   );
 }
 function HeartIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 19s-7-4.4-7-9a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 4.6-7 9-7 9z" />
     </svg>
   );
 }
 function LockIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <rect x="6" y="10" width="12" height="9" rx="2" strokeWidth={1.8} />
       <path strokeLinecap="round" strokeWidth={1.8} d="M8.5 10V8a3.5 3.5 0 0 1 7 0v2" />
     </svg>
@@ -257,7 +260,7 @@ function LockIcon() {
 }
 function GemIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinejoin="round" strokeWidth={1.8} d="M7 4h10l4 6-9 10L3 10l4-6z" />
     </svg>
   );
