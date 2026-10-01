@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Dancing_Script, Poppins } from "next/font/google";
+import { Geist, Geist_Mono, Dancing_Script, Great_Vibes, Poppins } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { Suspense } from 'react';
@@ -22,10 +22,16 @@ const dancingScript = Dancing_Script({
   subsets: ["latin"],
 });
 
+const script = Great_Vibes({
+  variable: "--font-script",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -41,7 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${dancingScript.variable} ${poppins.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${dancingScript.variable} ${script.variable} ${poppins.variable} antialiased`}
       >
         <EntryModal />
         {children}

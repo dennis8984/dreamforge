@@ -5,6 +5,7 @@ import Link from 'next/link';
 import SecretsLayout from '@/components/SecretsLayout';
 import ChatInput from '@/components/chat/ChatInput';
 import VoiceCallModal from '@/components/voice/VoiceCallModal';
+import { findLayoutCharacter } from '@/lib/layout-cast';
 import { supabase } from '@/lib/supabase';
 
 interface Character {
@@ -72,9 +73,15 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
           if (data) setUserTier(data.subscription_tier || 'free');
         }
       }
-      const res = await fetch(`/api/characters/${slug}`);
-      const data = await res.json();
-      const next = data.character as Character | undefined;
+      const local = findLayoutCharacter(slug);
+      let next = (local as Character | undefined) || undefined;
+      try {
+        const res = await fetch(`/api/characters/${slug}`);
+        const data = await res.json();
+        if (data.character) next = data.character as Character;
+      } catch {
+        next = local as Character | undefined;
+      }
       setCharacter(next || null);
       if (next?.description) setLines([{ role: 'assistant', content: next.description }]);
     };
