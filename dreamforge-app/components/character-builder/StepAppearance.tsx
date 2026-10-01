@@ -37,7 +37,7 @@ const skinTones = [
 ];
 
 const ageRanges = [
-  '18-22', '23-27', '28-32', '33-40', '40-50', '50+',
+  '21-24', '25-29', '30-34', '35-44', '45-54', '55+',
 ];
 
 interface OptionGridProps {

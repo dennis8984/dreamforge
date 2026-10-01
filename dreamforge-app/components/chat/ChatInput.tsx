@@ -10,6 +10,9 @@ interface ChatInputProps {
   isSending?: boolean;
   currentMode?: ContentMode;
   userTier?: string;
+  onRequestImage?: (prompt: string) => void;
+  onRequestVideo?: (prompt: string) => void;
+  sceneStatus?: string | null;
 }
 
 export default function ChatInput({
@@ -18,6 +21,9 @@ export default function ChatInput({
   isSending = false,
   currentMode = 'S1E',
   userTier = 'free',
+  onRequestImage,
+  onRequestVideo,
+  sceneStatus,
 }: ChatInputProps) {
   const [content, setContent] = useState('');
   const [contentMode, setContentMode] = useState<ContentMode>(currentMode);
@@ -49,7 +55,35 @@ export default function ChatInput({
   };
 
   return (
-    <div className="border-t border-gray-700 bg-gray-900 p-4">
+    <div className="border-t border-white/10 bg-[#0c0c0e] p-4">
+      {(onRequestImage || onRequestVideo) && (
+        <div className="max-w-4xl mx-auto mb-3">
+          <p className="text-xs text-gray-400 mb-2">Show me the scene:</p>
+          <div className="flex gap-2">
+            {onRequestImage && (
+              <button
+                type="button"
+                disabled={disabled || isSending}
+                onClick={() => onRequestImage(content.trim() || 'portrait, looking at the camera')}
+                className="px-3 py-1.5 rounded-full text-sm bg-[#1c1c1f] border border-white/10"
+              >
+                Image
+              </button>
+            )}
+            {onRequestVideo && (
+              <button
+                type="button"
+                disabled={disabled || isSending}
+                onClick={() => onRequestVideo(content.trim() || 'subtle smile, slight head turn')}
+                className="px-3 py-1.5 rounded-full text-sm bg-[#1c1c1f] border border-white/10"
+              >
+                Video
+              </button>
+            )}
+          </div>
+          {sceneStatus && <p className="text-xs text-gray-400 mt-2">{sceneStatus}</p>}
+        </div>
+      )}
       <div className="flex items-end gap-3 max-w-4xl mx-auto">
         {/* Content Mode Selector */}
         <ChatContentModeSelector
@@ -65,10 +99,10 @@ export default function ChatInput({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message... (Enter to send, Shift+Enter for newline)"
+            placeholder="Write a message..."
             disabled={disabled || isSending}
             rows={1}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 text-sm resize-none focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 bg-[#1c1c1f] border border-white/10 rounded-xl text-gray-100 placeholder-gray-500 text-sm resize-none focus:outline-none focus:border-[#ff4d8d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 

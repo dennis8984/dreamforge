@@ -14,6 +14,9 @@ interface VideoJobResult {
 }
 
 export async function queueVideoGeneration(params: VideoGenerationParams): Promise<VideoJobResult> {
+  if (!params.sourceImageUrl) {
+    throw new Error('A still is required. Video animates that image.');
+  }
   const url = process.env.RUNPOD_VIDEO_API_URL;
   if (!url) throw new Error('RUNPOD_VIDEO_API_URL not configured');
 
@@ -27,7 +30,7 @@ export async function queueVideoGeneration(params: VideoGenerationParams): Promi
       input: {
         prompt: params.prompt,
         source_image: params.sourceImageUrl,
-        num_frames: (params.durationSeconds || 4) * 8,
+        num_frames: (params.durationSeconds || 5) * 8,
         width: params.width || 512,
         height: params.height || 512,
       },

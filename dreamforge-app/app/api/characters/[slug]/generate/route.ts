@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { generateWithNanoBanana } from '@/lib/nano-banana';
 import { getServerSession } from '@/lib/auth-helpers';
+import { moderateText } from '@/lib/moderation';
 
 // POST /api/characters/[slug]/generate
 export async function POST(
@@ -14,6 +15,14 @@ export async function POST(
     const prompt: string = body?.prompt || '';
     const visibility: 'public' | 'members' = body?.visibility === 'members' ? 'members' : 'public';
     if (!prompt) return NextResponse.json({ error: 'prompt required' }, { status: 400 });
+
+    const textCheck = await moderateText(prompt);
+    if (!textCheck.approved) {
+      return NextResponse.json(
+        { error: 'This prompt did not pass the content check.', flags: textCheck.flags },
+        { status: 400 }
+      );
+    }
 
     // Debit moments if user is authenticated
     const user = await getServerSession(request);
@@ -79,6 +88,10 @@ export async function POST(
       .select()
       .single();
     if (mediaErr) return NextResponse.json({ error: mediaErr.message }, { status: 500 });
+
+    if (!character.avatar_url && result.imageUrl) {
+      await supabase.from('characters').update({ avatar_url: result.imageUrl }).eq('id', character.id);
+    }
 
     return NextResponse.json({ image_url: result.imageUrl, media });
   } catch (error) {

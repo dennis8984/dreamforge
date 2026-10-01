@@ -3,6 +3,7 @@ import { requireAuth, isAuthUser } from '@/lib/auth-helpers';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { queueVideoGeneration } from '@/lib/video-generation';
 import { MOMENTS_COSTS } from '@/lib/moments-config';
+import { moderateImage, moderateText } from '@/lib/moderation';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAuth(request);
@@ -19,10 +20,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const duration = durationSeconds || 4;
-    if (![2, 4, 6].includes(duration)) {
+    if (!sourceImageUrl || typeof sourceImageUrl !== 'string') {
       return NextResponse.json(
-        { error: 'Duration must be 2, 4, or 6 seconds' },
+        { error: 'A still is required. Make an image first, then turn that still into a clip.' },
+        { status: 400 }
+      );
+    }
+
+    const duration = 5;
+    if (durationSeconds && durationSeconds !== 5) {
+      return NextResponse.json(
+        { error: 'Character clips are 5 seconds.' },
+        { status: 400 }
+      );
+    }
+
+    const textCheck = await moderateText(prompt);
+    if (!textCheck.approved) {
+      return NextResponse.json(
+        { error: 'This prompt did not pass the content check.', flags: textCheck.flags },
+        { status: 400 }
+      );
+    }
+    const imageCheck = await moderateImage(sourceImageUrl);
+    if (!imageCheck.approved) {
+      return NextResponse.json(
+        { error: 'This still did not pass the content check.', flags: imageCheck.flags },
         { status: 400 }
       );
     }

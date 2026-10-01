@@ -5,6 +5,7 @@ import {
   NANO_BANANA_MODELS
 } from '@/lib/nano-banana';
 import { getServerSession } from '@/lib/auth-helpers';
+import { moderateImage, moderateText } from '@/lib/moderation';
 
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || '';
 
@@ -16,6 +17,25 @@ export async function POST(request: NextRequest) {
     // Simple validation for text-to-image
     if (!prompt && !input_image) {
       return NextResponse.json({ error: 'Prompt or input image is required' }, { status: 400 });
+    }
+
+    if (prompt) {
+      const textCheck = await moderateText(prompt);
+      if (!textCheck.approved) {
+        return NextResponse.json(
+          { error: 'This prompt did not pass the content check.', flags: textCheck.flags },
+          { status: 400 }
+        );
+      }
+    }
+    if (input_image && typeof input_image === 'string' && input_image.startsWith('http')) {
+      const imageCheck = await moderateImage(input_image);
+      if (!imageCheck.approved) {
+        return NextResponse.json(
+          { error: 'This image did not pass the content check.', flags: imageCheck.flags },
+          { status: 400 }
+        );
+      }
     }
 
     // Debit moments if user is authenticated

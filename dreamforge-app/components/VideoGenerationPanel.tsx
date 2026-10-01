@@ -8,14 +8,13 @@ interface VideoGenerationPanelProps {
   onVideoGenerated?: (videoUrl: string) => void;
 }
 
-type Duration = 2 | 4 | 6;
+type Duration = 5;
 type JobStatus = 'idle' | 'submitting' | 'queued' | 'processing' | 'completed' | 'failed';
 
 export default function VideoGenerationPanel({ onVideoGenerated }: VideoGenerationPanelProps) {
   const [prompt, setPrompt] = useState('');
-  const [duration, setDuration] = useState<Duration>(4);
+  const [duration] = useState<Duration>(5);
   const [sourceImageUrl, setSourceImageUrl] = useState('');
-  const [showImageInput, setShowImageInput] = useState(false);
   const [jobStatus, setJobStatus] = useState<JobStatus>('idle');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +86,7 @@ export default function VideoGenerationPanel({ onVideoGenerated }: VideoGenerati
   }, [onVideoGenerated]);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || !sourceImageUrl.trim()) return;
 
     setError(null);
     setVideoUrl(null);
@@ -103,7 +102,7 @@ export default function VideoGenerationPanel({ onVideoGenerated }: VideoGenerati
         },
         body: JSON.stringify({
           prompt: prompt.trim(),
-          sourceImageUrl: showImageInput && sourceImageUrl ? sourceImageUrl : undefined,
+          sourceImageUrl: sourceImageUrl.trim(),
           durationSeconds: duration,
         }),
       });
@@ -204,52 +203,21 @@ export default function VideoGenerationPanel({ onVideoGenerated }: VideoGenerati
             rows={3}
           />
 
-          {/* Source image toggle */}
-          <div className="mt-3">
-            <button
-              onClick={() => setShowImageInput(!showImageInput)}
-              className="text-sm text-gray-400 hover:text-gray-300 flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              {showImageInput ? 'Hide source image' : 'Add source image (optional)'}
-            </button>
-            {showImageInput && (
-              <input
-                type="url"
-                value={sourceImageUrl}
-                onChange={(e) => setSourceImageUrl(e.target.value)}
-                placeholder="https://example.com/source-image.jpg"
-                className="mt-2 w-full p-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-purple-500 transition-colors"
-              />
-            )}
-          </div>
+          <label className="block mt-3 text-sm text-gray-400">
+            Still
+            <input
+              type="url"
+              value={sourceImageUrl}
+              onChange={(e) => setSourceImageUrl(e.target.value)}
+              placeholder="https://example.com/still.jpg"
+              className="mt-2 w-full p-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-[#ff4d8d] transition-colors"
+            />
+          </label>
+          <p className="mt-3 text-sm text-gray-400">Clip length: {duration} seconds</p>
 
-          {/* Duration selector */}
-          <div className="mt-4 flex items-center gap-4">
-            <span className="text-sm text-gray-400">Duration:</span>
-            <div className="flex gap-2">
-              {([2, 4, 6] as Duration[]).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDuration(d)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    duration === d
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  {d}s
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Generate button */}
           <button
             onClick={handleGenerate}
-            disabled={!prompt.trim() || isGenerating}
+            disabled={!prompt.trim() || !sourceImageUrl.trim() || isGenerating}
             className="mt-4 w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

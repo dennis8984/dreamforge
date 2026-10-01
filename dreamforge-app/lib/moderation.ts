@@ -9,7 +9,7 @@ interface ModerationResult {
 export async function moderateText(text: string): Promise<ModerationResult> {
   try {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) return { approved: true, flags: [], confidence: 0 };
+    if (!apiKey) return { approved: false, flags: ['checker_unavailable'], confidence: 0 };
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -22,14 +22,14 @@ export async function moderateText(text: string): Promise<ModerationResult> {
     const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(cleaned);
   } catch {
-    return { approved: true, flags: [], confidence: 0 };
+    return { approved: false, flags: ['checker_unavailable'], confidence: 0 };
   }
 }
 
 export async function moderateImage(imageUrl: string): Promise<ModerationResult> {
   try {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) return { approved: true, flags: [], confidence: 0 };
+    if (!apiKey) return { approved: false, flags: ['checker_unavailable'], confidence: 0 };
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -48,6 +48,6 @@ export async function moderateImage(imageUrl: string): Promise<ModerationResult>
     const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(cleaned);
   } catch {
-    return { approved: true, flags: [], confidence: 0 };
+    return { approved: false, flags: ['checker_unavailable'], confidence: 0 };
   }
 }
