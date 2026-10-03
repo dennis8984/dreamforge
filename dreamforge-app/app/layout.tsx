@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import AuthHandler from "@/components/AuthHandler";
 import CookieConsent from "@/components/CookieConsent";
 import EntryModal from "@/components/EntryModal";
+import { I18nProvider } from "@/lib/i18n";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,13 +50,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${dancingScript.variable} ${script.variable} ${poppins.variable} antialiased`}
       >
-        <EntryModal />
-        {children}
-        <Analytics />
-        <Suspense fallback={null}>
-          <AuthHandler />
-        </Suspense>
-        <CookieConsent />
+        <I18nProvider>
+          <EntryModal />
+          {children}
+          <Analytics />
+          <Suspense fallback={null}>
+            <AuthHandler />
+          </Suspense>
+          <CookieConsent />
+        </I18nProvider>
       </body>
     </html>
   );

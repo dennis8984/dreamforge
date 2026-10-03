@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useI18n } from '@/lib/i18n';
 
 const STORAGE_KEY = 'dreamforge_entry_acknowledged';
 
@@ -18,6 +19,7 @@ export default function EntryModal() {
     setShow(false);
   };
 
+  const { t } = useI18n();
   if (!show) return null;
 
   return (
@@ -29,20 +31,17 @@ export default function EntryModal() {
             <span className="text-3xl font-bold text-white tracking-tight">DF</span>
           </div>
           <h1 className="text-4xl font-bold text-white tracking-tight">DreamForge</h1>
-          <p className="mt-2 text-gray-400 text-sm">AI Companions & Art</p>
+          <p className="mt-2 text-gray-400 text-sm">{t('gate.sub')}</p>
         </div>
 
-        {/* Tagline */}
-        <p className="text-gray-300 text-lg mb-10 leading-relaxed">
-          Chat with AI companions, generate stunning art, and create your own characters.
-        </p>
+        <p className="text-gray-300 text-lg mb-10 leading-relaxed">{t('gate.tagline')}</p>
 
         {/* Enter button */}
         <button
           onClick={enter}
           className="w-full max-w-xs py-4 px-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:from-purple-500 hover:to-blue-500 transition-all duration-200 shadow-lg shadow-purple-500/25"
         >
-          Enter DreamForge
+          {t('gate.enter')}
         </button>
 
         <Link
@@ -50,7 +49,7 @@ export default function EntryModal() {
           onClick={enter}
           className="mt-4 text-sm text-gray-500 hover:text-gray-300 transition-colors"
         >
-          Already have an account? Sign in
+          {t('gate.signin')}
         </Link>
       </div>
     </div>

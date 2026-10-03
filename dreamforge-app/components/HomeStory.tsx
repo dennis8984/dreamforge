@@ -44,7 +44,7 @@ const SECTIONS = [
     heading: 'Support and language',
     paragraphs: [
       'Write to support@dreamforge.app and include the email on the account. The help center on this site answers the common paths: signup, Moments, chat, stills, clips, voice, and deletion. We do not run a separate ticket brand.',
-      'The live interface is English. Other locales are not shipped. A companion chat can still follow the language you write in when the model can answer that way, but the menus, policies, and help articles are English.',
+      'The header language menu switches the shell, home, and profile screens among English, Spanish, French, German, and Portuguese. The choice stays in this browser. Policy and help articles stay in English. A companion chat can still follow the language you write in when the model can answer that way.',
     ],
   },
   {

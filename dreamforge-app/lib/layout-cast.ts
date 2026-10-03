@@ -80,3 +80,11 @@ export const CAST_ROWS = [
 export function findLayoutCharacter(slug: string) {
   return LAYOUT_CAST.find((character) => character.slug === slug);
 }
+
+export type ProfileView = 'chat' | 'modal' | 'cam';
+
+export function viewForRow(rowIndex: number): ProfileView {
+  if (rowIndex === 1 || rowIndex === 3) return 'modal';
+  if (rowIndex === 4 || rowIndex === 5) return 'cam';
+  return 'chat';
+}
