@@ -8,9 +8,10 @@ interface Props {
   onClose: () => void;
   onDatasetReady: (images: string[]) => void; // dataset as data URLs or URLs
   initialTab?: 'multi' | 'single' | 'desc';
+  onTabChange?: (tab: 'multi' | 'single' | 'desc') => void;
 }
 
-export default function CharacterWizard({ open, onClose, onDatasetReady, initialTab = 'multi' }: Props) {
+export default function CharacterWizard({ open, onClose, onDatasetReady, initialTab = 'multi', onTabChange }: Props) {
   const [tab, setTab] = useState<'multi' | 'single' | 'desc'>(initialTab);
   const [uploads, setUploads] = useState<string[]>([]);
   const [singleImage, setSingleImage] = useState<string | null>(null);
@@ -122,7 +123,7 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
           {(['multi','single','desc'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); onTabChange?.(t); }}
               className={`px-4 py-3 text-sm ${tab===t? 'text-white border-b-2 border-blue-500' : 'text-gray-400'}`}
             >
               {t==='multi'?'4+ Images':t==='single'?'One Image':'Description'}

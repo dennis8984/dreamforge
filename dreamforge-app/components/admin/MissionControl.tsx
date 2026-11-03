@@ -1,14 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import {
+  type MissionControlTab,
+  missionControlTabFromPath,
+  missionControlTabPath,
+  pushAdminUrl,
+} from '@/lib/admin-routes';
 import MissionControlDashboard from './MissionControlDashboard';
 import MissionControlChat from './MissionControlChat';
 import MissionControlBrowser from './MissionControlBrowser';
 import MissionControlChannels from './MissionControlChannels';
 
-type SubTab = 'dashboard' | 'chat' | 'browser' | 'channels';
-
-const SUB_TABS: { id: SubTab; label: string; icon: React.ReactNode }[] = [
+const SUB_TABS: { id: MissionControlTab; label: string; icon: React.ReactNode }[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -28,7 +32,7 @@ const SUB_TABS: { id: SubTab; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: 'browser',
+    id: 'control-ui',
     label: 'Control UI',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +52,7 @@ const SUB_TABS: { id: SubTab; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function MissionControl() {
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('dashboard');
+  const activeSubTab = missionControlTabFromPath(usePathname());
 
   return (
     <div>
@@ -66,7 +70,7 @@ export default function MissionControl() {
         {SUB_TABS.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveSubTab(tab.id)}
+            onClick={() => pushAdminUrl(missionControlTabPath(tab.id))}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeSubTab === tab.id
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -83,7 +87,7 @@ export default function MissionControl() {
       <div>
         {activeSubTab === 'dashboard' && <MissionControlDashboard />}
         {activeSubTab === 'chat' && <MissionControlChat />}
-        {activeSubTab === 'browser' && <MissionControlBrowser />}
+        {activeSubTab === 'control-ui' && <MissionControlBrowser />}
         {activeSubTab === 'channels' && <MissionControlChannels />}
       </div>
     </div>

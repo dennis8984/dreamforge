@@ -7,6 +7,7 @@ import CharacterSidebar from '@/components/CharacterSidebar';
 import StartCard from '@/components/StartCard';
 import CharacterWizard from '@/components/CharacterWizard';
 import CharacterCard from '@/components/CharacterCard';
+import { pushAdminUrl } from '@/lib/admin-routes';
 
 interface Character {
   id: string;
@@ -42,6 +43,9 @@ function CharacterAdminPageContent() {
       setNewName(createName);
       setShowWizard(true);
     }
+    if (mode !== 'single' && mode !== 'multi' && mode !== 'desc' && !createName) {
+      setShowWizard(false);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -66,8 +70,7 @@ function CharacterAdminPageContent() {
   const openWizard = (mode: 'multi' | 'single' | 'desc') => {
     setDataset(null);
     setNewName('');
-    setWizardMode(mode);
-    setShowWizard(true);
+    pushAdminUrl(`/admin/character?mode=${mode}`);
   };
 
   const onDatasetReady = (images: string[]) => {
@@ -263,7 +266,13 @@ function CharacterAdminPageContent() {
         </div>
       </div>
 
-      <CharacterWizard open={showWizard} onClose={() => setShowWizard(false)} onDatasetReady={onDatasetReady} initialTab={wizardMode} />
+      <CharacterWizard
+        open={showWizard}
+        onClose={() => pushAdminUrl('/admin/character')}
+        onDatasetReady={onDatasetReady}
+        initialTab={wizardMode}
+        onTabChange={(mode) => pushAdminUrl(`/admin/character?mode=${mode}`)}
+      />
     </main>
   );
 }
