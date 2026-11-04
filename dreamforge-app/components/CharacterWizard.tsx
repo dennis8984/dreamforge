@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-const MIN_UPLOADS = 4;
-const MAX_UPLOADS = 20;
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+import { MIN_UPLOADS, MAX_UPLOADS, UPLOAD_TYPES, mergeUploads, uploadFileProblem, uploadStatus } from '@/lib/upload-selection';
 
 export type DatasetOrigin = 'upload' | 'generated';
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 interface Props {
   open: boolean;
@@ -22,6 +28,7 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
   const [singleImage, setSingleImage] = useState<string | null>(null);
   const [desc, setDesc] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reading, setReading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,24 +39,34 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
 
   if (!open) return null;
 
-  const handleFiles = (files: FileList | null) => {
-    if (!files) return;
+  // The picker is disabled while reading, so `uploads` is still current when this finishes.
+  const handleFiles = async (files: File[]) => {
+    if (files.length === 0) return;
     setError(null);
-    setUploads([]); // Clear existing uploads
-    const chosen = Array.from(files);
-    if (chosen.length > MAX_UPLOADS) {
-      setError(`Choose up to ${MAX_UPLOADS} images.`);
-      return;
-    }
-    if (chosen.some((file) => file.size > MAX_UPLOAD_BYTES)) {
-      setError('Each image must be 10 MB or smaller.');
-      return;
-    }
-    chosen.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => setUploads((u) => [...u, reader.result as string]);
-      reader.readAsDataURL(file);
+    setReading(true);
+    const problems: string[] = [];
+    const usable = files.filter((file) => {
+      const problem = uploadFileProblem(file);
+      if (problem) problems.push(problem);
+      return !problem;
     });
+    const results = await Promise.allSettled(usable.map(readAsDataUrl));
+    const images = results.flatMap((result, index) => {
+      if (result.status === 'fulfilled') return [result.value];
+      problems.push(`${usable[index].name} could not be read`);
+      return [];
+    });
+    const merged = mergeUploads(uploads, images);
+    if (merged.duplicates > 0) problems.push(`${merged.duplicates} already selected`);
+    if (merged.overLimit > 0) problems.push(`${merged.overLimit} over the limit of ${MAX_UPLOADS}`);
+    setUploads(merged.images);
+    if (problems.length > 0) setError(`Left out: ${problems.join('; ')}.`);
+    setReading(false);
+  };
+
+  const removeUpload = (index: number) => {
+    setError(null);
+    setUploads((current) => current.filter((_, i) => i !== index));
   };
 
   const handleSingle = (files: FileList | null) => {
@@ -91,6 +108,9 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
   const datasetReadyFromMulti = () => {
     if (uploads.length < MIN_UPLOADS) return;
     onDatasetReady(uploads, 'upload');
+    // Selections add up, so without this the next character would start with these photos.
+    setUploads([]);
+    setError(null);
     onClose();
   };
 
@@ -119,16 +139,49 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
               <p className="text-sm text-gray-400">
                 Upload at least {MIN_UPLOADS} clear images of the same adult. The first three become the character&apos;s references, so put your best ones first.
               </p>
-              <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e) => handleFiles(e.target.files)} />
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <label className={`px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white text-sm focus-within:ring-2 focus-within:ring-blue-500 ${reading ? 'opacity-50' : 'cursor-pointer hover:bg-gray-700'}`}>
+                  {reading ? 'Reading...' : 'Add Images'}
+                  <input
+                    type="file"
+                    className="sr-only"
+                    accept={UPLOAD_TYPES.join(',')}
+                    multiple
+                    disabled={reading}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      // Lets the same file be picked again after removing it.
+                      e.target.value = '';
+                      void handleFiles(files);
+                    }}
+                  />
+                </label>
+                <p aria-live="polite" className="text-sm text-gray-300">{uploadStatus(uploads.length)}</p>
+                {uploads.length > 0 && (
+                  <button type="button" onClick={() => { setUploads([]); setError(null); }} className="text-sm text-gray-400 hover:text-white underline">
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-2 max-h-[50vh] overflow-y-auto">
                 {uploads.map((u, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={i} src={u} alt="upload" className="w-full aspect-square object-cover rounded" />
+                  <div key={u} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt={`Uploaded image ${i + 1}`} className="w-full aspect-square object-cover rounded" />
+                    <button
+                      type="button"
+                      onClick={() => removeUpload(i)}
+                      aria-label={`Remove image ${i + 1}`}
+                      className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/70 text-white hover:bg-black"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 ))}
               </div>
               <button
                 type="button"
-                disabled={uploads.length < MIN_UPLOADS || busy}
+                disabled={uploads.length < MIN_UPLOADS || busy || reading}
                 onClick={datasetReadyFromMulti}
                 className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
               >
