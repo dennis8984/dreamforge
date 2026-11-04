@@ -1,12 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { generateWithNanoBanana } from '@/lib/nano-banana';
+
+const MIN_UPLOADS = 4;
+const MAX_UPLOADS = 20;
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+export type DatasetOrigin = 'upload' | 'generated';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onDatasetReady: (images: string[]) => void; // dataset as data URLs or URLs
+  onDatasetReady: (images: string[], origin: DatasetOrigin) => void; // data URLs or URLs
   initialTab?: 'multi' | 'single' | 'desc';
   onTabChange?: (tab: 'multi' | 'single' | 'desc') => void;
 }
@@ -17,6 +22,7 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
   const [singleImage, setSingleImage] = useState<string | null>(null);
   const [desc, setDesc] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -28,8 +34,18 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
+    setError(null);
     setUploads([]); // Clear existing uploads
-    Array.from(files).forEach((file) => {
+    const chosen = Array.from(files);
+    if (chosen.length > MAX_UPLOADS) {
+      setError(`Choose up to ${MAX_UPLOADS} images.`);
+      return;
+    }
+    if (chosen.some((file) => file.size > MAX_UPLOAD_BYTES)) {
+      setError('Each image must be 10 MB or smaller.');
+      return;
+    }
+    chosen.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => setUploads((u) => [...u, reader.result as string]);
       reader.readAsDataURL(file);
@@ -44,75 +60,37 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
     reader.readAsDataURL(file);
   };
 
-  const synthesizeFromSingle = async () => {
+  const useSingleImage = () => {
     if (!singleImage) return;
-    setBusy(true);
-    try {
-      const results: string[] = [];
-      for (let i = 0; i < 3; i++) {
-        const response = await fetch('/api/characters/synthesize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: singleImage })
-        });
-        const result = await response.json();
-        
-        if (response.ok && result.imageUrl) {
-          results.push(result.imageUrl);
-        } else if (response.ok && result.jobId) {
-          // Poll for the result
-          const imageUrl = await pollForResult(result.jobId);
-          if (imageUrl) {
-            results.push(imageUrl);
-          }
-        }
-      }
-      onDatasetReady([singleImage, ...results]);
-      onClose();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const pollForResult = async (jobId: string): Promise<string | null> => {
-    for (let i = 0; i < 30; i++) { // Poll for a maximum of 60 seconds
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      try {
-        const response = await fetch(`/api/generate?job_id=${jobId}`);
-        const result = await response.json();
-        if (result.status === 'completed' && result.image_url) {
-          return result.image_url;
-        }
-        if (result.status === 'failed' || result.error) {
-          console.error('Job failed:', result.error);
-          return null;
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    }
-    return null;
+    onDatasetReady([singleImage], 'upload');
+    onClose();
   };
 
   const generateFromDesc = async () => {
     if (!desc.trim()) return;
     setBusy(true);
+    setError(null);
     try {
-      const results: string[] = [];
-      for (let i = 0; i < 4; i++) {
-        const r = await generateWithNanoBanana(desc, 'stable-diffusion-xl', { enhance: true });
-        if (r.success && r.imageUrl) results.push(r.imageUrl);
-      }
-      onDatasetReady(results);
+      const response = await fetch('/api/admin/characters/generate-dataset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ description: desc }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not generate images.');
+      onDatasetReady(result.images, 'generated');
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not generate images.');
     } finally {
       setBusy(false);
     }
   };
 
   const datasetReadyFromMulti = () => {
-    if (uploads.length < 4) return;
-    onDatasetReady(uploads);
+    if (uploads.length < MIN_UPLOADS) return;
+    onDatasetReady(uploads, 'upload');
     onClose();
   };
 
@@ -135,9 +113,13 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
         </div>
 
         <div className="p-4">
+          {error && <p role="alert" className="mb-3 text-sm text-red-400">{error}</p>}
           {tab === 'multi' && (
             <div className="space-y-4">
-              <input type="file" accept="image/*" multiple onChange={(e) => handleFiles(e.target.files)} />
+              <p className="text-sm text-gray-400">
+                Upload at least {MIN_UPLOADS} clear images of the same adult. The first three become the character&apos;s references, so put your best ones first.
+              </p>
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e) => handleFiles(e.target.files)} />
               <div className="grid grid-cols-4 gap-2">
                 {uploads.map((u, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -146,7 +128,7 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
               </div>
               <button
                 type="button"
-                disabled={uploads.length < 4 || busy}
+                disabled={uploads.length < MIN_UPLOADS || busy}
                 onClick={datasetReadyFromMulti}
                 className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
               >
@@ -157,7 +139,7 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
 
           {tab === 'single' && (
             <div className="space-y-4">
-              <input type="file" accept="image/*" onChange={(e) => handleSingle(e.target.files)} />
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleSingle(e.target.files)} />
               {singleImage && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={singleImage} alt="single" className="w-48 rounded" />
@@ -165,10 +147,10 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
               <button
                 type="button"
                 disabled={!singleImage || busy}
-                onClick={synthesizeFromSingle}
+                onClick={useSingleImage}
                 className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-50"
               >
-                {busy? 'Generating...' : 'Synthesize More'}
+                Use This Image
               </button>
             </div>
           )}
@@ -188,7 +170,7 @@ export default function CharacterWizard({ open, onClose, onDatasetReady, initial
                 onClick={generateFromDesc}
                 className="px-4 py-2 rounded bg-emerald-600 text-white disabled:opacity-50"
               >
-                {busy? 'Generating...' : 'Generate Base Images'}
+                {busy? 'Generating, this can take a minute...' : 'Generate Base Images'}
               </button>
             </div>
           )}

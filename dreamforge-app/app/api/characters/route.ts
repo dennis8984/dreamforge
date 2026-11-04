@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { isAtLeast21 } from '@/lib/character-age';
 
 // GET /api/characters?search=&tag=&page=1&pageSize=24
 export async function GET(request: NextRequest) {
@@ -33,7 +34,10 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query.order('created_at', { ascending: false }).range(from, to);
     if (error) throw error;
 
-    return NextResponse.json({ items: data || [], total: count || 0, page, pageSize });
+    const items = (data || []).filter(isAtLeast21);
+    const hidden = (data || []).length - items.length;
+
+    return NextResponse.json({ items, total: Math.max((count || 0) - hidden, 0), page, pageSize });
   } catch (error) {
     console.error('Error listing characters:', error);
     return NextResponse.json({ items: [], total: 0, page: 1, pageSize: 24 });

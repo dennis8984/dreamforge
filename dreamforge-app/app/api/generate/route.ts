@@ -6,6 +6,8 @@ import {
 } from '@/lib/nano-banana';
 import { getServerSession } from '@/lib/auth-helpers';
 import { moderateImage, moderateText } from '@/lib/moderation';
+import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
+import { isSpicyConfigured } from '@/lib/ai-providers/spicyapi';
 
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || '';
 
@@ -19,6 +21,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt or input image is required' }, { status: 400 });
     }
 
+    // This route isn't tied to a character or a charge, so it stays an admin test tool on
+    // SpicyAPI, where every image costs real money. Users generate through a character.
+    if (isSpicyConfigured()) {
+      const admin = await requireBetterAuthAdmin(request);
+      if (!isAdminUser(admin)) return admin;
+    }
+
     if (prompt) {
       const textCheck = await moderateText(prompt);
       if (!textCheck.approved) {
@@ -28,7 +37,15 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    if (input_image && typeof input_image === 'string' && input_image.startsWith('http')) {
+    if (input_image) {
+      // Image-to-image is admin only. On an open route, anyone could upload a photo of
+      // a real person with no release and get an explicit version back.
+      const admin = await requireBetterAuthAdmin(request);
+      if (!isAdminUser(admin)) return admin;
+
+      if (typeof input_image !== 'string') {
+        return NextResponse.json({ error: 'Input image must be a string' }, { status: 400 });
+      }
       const imageCheck = await moderateImage(input_image);
       if (!imageCheck.approved) {
         return NextResponse.json(
@@ -67,11 +84,11 @@ export async function POST(request: NextRequest) {
       model: modelConfig?.name || 'default',
       hasRunpodKey: !!RUNPOD_API_KEY,
       runpodKeyLength: RUNPOD_API_KEY.length,
-      promptPreview: prompt.substring(0, 50) + '...'
+      promptPreview: (prompt || '').substring(0, 50) + '...'
     });
 
-    // If no Runpod API key, return error
-    if (!RUNPOD_API_KEY || RUNPOD_API_KEY === '') {
+    // If no generation provider is configured, return error
+    if (!isSpicyConfigured() && (!RUNPOD_API_KEY || RUNPOD_API_KEY === '')) {
       console.error('No Runpod API key found - cannot generate images');
       console.error('Set RUNPOD_API_KEY in Vercel environment variables for real generation');
 
@@ -83,13 +100,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate with Nano Banana (with genur.art optimized settings)
-    const result = await generateWithNanoBanana(prompt || 'beautiful nude model', model_id, {
+    const result = await generateWithNanoBanana(prompt || 'portrait photo', model_id, {
       negative_prompt: parameters?.negative_prompt,
       width: parameters?.width || 1024,
       height: parameters?.height || 1024,
       guidance_scale: parameters?.guidanceScale || 4.5, // Lowered from 7.5 to match genur.art
       steps: parameters?.steps || 35, // Optimized from 50 to 35 for faster generation
-      enhance: true, // Enable adult-oriented prompt enhancement
+      enhance: true,
+      nsfw: parameters?.nsfw === true,
       sampler: parameters?.sampler || 'DPM++ 2M',
       input_image: input_image, // For image-to-image
       strength: parameters?.strength || 0.75 // How much to transform the image

@@ -1,4 +1,16 @@
 // Gemini imports removed - no longer using prompt enhancement
+import {
+  buildImageRequest,
+  createTask,
+  getTask,
+  imageModelFor,
+  isSpicyConfigured,
+  prepareImageInput,
+  webhookUrl,
+  withImageReferences,
+  type ImageModelKey,
+  type SpicyLora,
+} from './ai-providers/spicyapi';
 
 // Runpod configuration - gets values from Vercel environment variables
 const RUNPOD_API_URL = process.env.RUNPOD_API_URL || process.env.NEXT_PUBLIC_RUNPOD_API_URL || '';
@@ -34,10 +46,12 @@ export const NANO_BANANA_MODELS = {
   }
 };
 
-// Adult-oriented prompt enhancement
-// Enhances prompts to be more detailed and explicit for NSFW content generation
+// Adds quality terms to a prompt. Explicit prompts pass through unchanged in content.
+// The adult tags are only added when the caller sets `nsfw`, so a non-explicit prompt
+// such as a profile photo stays non-explicit.
 export async function enhancePromptWithGemini(
-  prompt: string
+  prompt: string,
+  { nsfw = false }: { nsfw?: boolean } = {}
 ): Promise<string> {
   // Skip enhancement for already explicit prompts
   if (prompt.includes('nude') || prompt.includes('naked') || prompt.includes('nsfw') || prompt.includes('explicit')) {
@@ -65,7 +79,7 @@ export async function enhancePromptWithGemini(
     .slice(0, 3)
     .join(', ');
 
-  return `${prompt}, ${selectedEnhancements}, adult content, nsfw`;
+  return `${prompt}, ${selectedEnhancements}${nsfw ? ', adult content, nsfw' : ''}`;
 }
 
 // Generate image using Runpod
@@ -127,7 +141,7 @@ export async function generateImageWithRunpod(
   const requestBody = {
     input: {
       prompt: prompt,
-      negative_prompt: parameters.negative_prompt || 'two girls, multiple girls, group, 3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage, perfect skin, airbrushed, smooth skin, flawless skin',
+      negative_prompt: parameters.negative_prompt || 'two girls, multiple girls, group, 3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, hollywood, child, minor, underage, perfect skin, airbrushed, smooth skin, flawless skin',
       width: parameters.width || 1024,
       height: parameters.height || 1024,
       num_inference_steps: parameters.num_inference_steps || 40,
@@ -146,7 +160,7 @@ export async function generateImageWithRunpod(
   console.log('📤 SENDING REQUEST TO RUNPOD');
   console.log('='.repeat(60));
   console.log('URL:', RUNPOD_API_URL);
-  console.log('API Key:', RUNPOD_API_KEY ? `${RUNPOD_API_KEY.substring(0, 10)}...` : 'NOT SET');
+  console.log('API Key:', RUNPOD_API_KEY ? 'set' : 'NOT SET');
   console.log('Prompt:', prompt.substring(0, 100) + '...');
   console.log('Mode:', parameters.input_image ? 'Image-to-Image' : 'Text-to-Image');
   console.log('='.repeat(60));
@@ -246,6 +260,13 @@ export async function checkRunpodJobStatus(jobId: string): Promise<{
   error?: string;
 }> {
   try {
+    if (isSpicyConfigured()) {
+      const task = await getTask(jobId);
+      if (task.state === 'succeeded') return { status: 'completed', imageUrl: task.asset?.url };
+      if (task.state === 'queued' || task.state === 'running') return { status: 'processing' };
+      return { status: 'failed', error: task.errorMessage || task.errorCode || task.state };
+    }
+
     // Extract endpoint ID from the API URL
     const endpointId = RUNPOD_API_URL.match(/\/v2\/([^\/]+)\/run/)?.[1] || 'ga8coh1zc01r57';
     const statusUrl = `https://api.runpod.ai/v2/${endpointId}/status/${jobId}`;
@@ -403,6 +424,7 @@ export async function generateWithNanoBanana(
   _modelId: string = 'stable-diffusion-xl',
   options: {
     enhance?: boolean;
+    nsfw?: boolean; // Adds adult tags during enhancement. Explicit prompts work either way.
     negative_prompt?: string;
     width?: number;
     height?: number;
@@ -413,6 +435,11 @@ export async function generateWithNanoBanana(
     scheduler?: string;
     input_image?: string; // For image-to-image
     strength?: number; // How much to transform (0-1)
+    loras?: SpicyLora[]; // SpicyAPI only
+    referenceImages?: string[]; // SpicyAPI only: screened images of this character
+    imageModel?: ImageModelKey; // SpicyAPI only: overrides the automatic choice
+    backgroundImage?: string; // SpicyAPI only: the location, used with referenceImages
+    webhook?: boolean; // SpicyAPI only: set when the task is tracked in generation_tasks
   } = {}
 ): Promise<{
   success: boolean;
@@ -424,7 +451,9 @@ export async function generateWithNanoBanana(
   try {
     // Enhance prompt if requested (default is true for better results)
     const shouldEnhance = options.enhance !== false;
-    const finalPrompt = shouldEnhance ? await enhancePromptWithGemini(prompt) : prompt;
+    const finalPrompt = shouldEnhance
+      ? await enhancePromptWithGemini(prompt, { nsfw: options.nsfw })
+      : prompt;
 
     if (shouldEnhance && finalPrompt !== prompt) {
       console.log('Prompt enhanced:', {
@@ -433,8 +462,37 @@ export async function generateWithNanoBanana(
       });
     }
 
+    // With a SpicyAPI key set, every server route generates there instead of on Runpod.
+    if (isSpicyConfigured()) {
+      const references = options.referenceImages || [];
+      const modelKey = options.imageModel ?? imageModelFor({
+        hasReferences: references.length > 0,
+        hasLoras: Boolean(options.loras?.length),
+      });
+      const request = buildImageRequest({
+        modelKey,
+        prompt: references.length > 0
+          ? withImageReferences(modelKey, references.length, finalPrompt, { hasBackground: Boolean(options.backgroundImage) })
+          : finalPrompt,
+        width: options.width,
+        height: options.height,
+        seed: options.seed,
+        loras: options.loras,
+        referenceImages: references,
+        backgroundImage: options.backgroundImage,
+        sourceImage: options.input_image ? await prepareImageInput(options.input_image) : undefined,
+        strength: options.strength,
+        resolution: process.env.SPICY_IMAGE_RESOLUTION,
+      });
+      const task = await createTask(request, {
+        idempotencyKey: crypto.randomUUID(),
+        callBackUrl: options.webhook ? webhookUrl() : undefined,
+      });
+      return { success: true, jobId: task.taskId, originalPrompt: finalPrompt };
+    }
+
     // Minimal negative prompt - focus on avoiding quality issues, not content
-    const defaultNegative = 'two girls, multiple girls, group, 3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, asian, hollywood, child, minor, underage, bad quality, cropped, morphed, blender, 3d_model, oil, perfect skin, airbrushed, smooth skin, flawless skin';
+    const defaultNegative = 'two girls, multiple girls, group, 3D render, illustration, cartoon, (low quality:1), makeup, drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly, text, watermark, hollywood, child, minor, underage, bad quality, cropped, morphed, blender, 3d_model, oil, perfect skin, airbrushed, smooth skin, flawless skin';
 
     // Generate image with Runpod
     const result = await generateImageWithRunpod(finalPrompt, {

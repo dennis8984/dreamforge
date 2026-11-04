@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { isAtLeast21 } from '@/lib/character-age';
 
 // GET /api/characters/[slug]?page=1&pageSize=24
 export async function GET(
@@ -16,6 +17,9 @@ export async function GET(
       .eq('slug', slug)
       .single();
     if (charErr) throw charErr;
+    if (!isAtLeast21(character)) {
+      return NextResponse.json({ error: 'Character not found' }, { status: 404 });
+    }
 
     // Paginate media
     const page = 1;

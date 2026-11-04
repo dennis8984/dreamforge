@@ -7,12 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test lib/*.test.ts lib/**/*.test.ts",
     "verify-env": "tsx scripts/verify-env.ts",
     "prebuild": "npm run verify-env",
     "security-check": "grep -r 'rpa_\\|AIza\\|eyJ' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.git . || echo 'No secrets found'"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@stripe/stripe-js": "^8.8.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.57.4",

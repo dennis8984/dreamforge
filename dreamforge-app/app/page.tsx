@@ -9,6 +9,7 @@ import { ProfileModal } from '@/components/ProfileViews';
 import { LAYOUT_CAST, viewForRow, type ProfileView } from '@/lib/layout-cast';
 import { useI18n, type MessageKey } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { ageNumber, isAtLeast21 } from '@/lib/character-age';
 
 interface Character {
   id: string;
@@ -62,17 +63,6 @@ export default function Home() {
       <HomeContent />
     </Suspense>
   );
-}
-
-function ageNumber(age?: string): number | null {
-  if (!age) return null;
-  const n = parseInt(age, 10);
-  return Number.isNaN(n) ? null : n;
-}
-
-function isAtLeast21(character: Character): boolean {
-  const n = ageNumber(character.age);
-  return n === null || n >= 21;
 }
 
 function HomeContent() {

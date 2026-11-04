@@ -1,4 +1,4 @@
-export const ADMIN_TABS = ['models', 'create-model', 'characters', 'settings', 'mission-control'] as const;
+export const ADMIN_TABS = ['models', 'create-model', 'characters', 'loras', 'settings', 'mission-control'] as const;
 export type AdminTab = (typeof ADMIN_TABS)[number];
 
 export const MISSION_CONTROL_TABS = ['dashboard', 'chat', 'control-ui', 'channels'] as const;
