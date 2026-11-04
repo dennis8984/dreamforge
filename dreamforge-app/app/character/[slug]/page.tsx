@@ -60,6 +60,9 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
   );
 }
 
+const POLL_INTERVAL_MS = 5000;
+const POLL_MAX_ATTEMPTS = 120; // Ten minutes.
+
 function CharacterScreen({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const search = useSearchParams();
@@ -73,6 +76,7 @@ function CharacterScreen({ params }: { params: Promise<{ slug: string }> }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [sceneStatus, setSceneStatus] = useState<string | null>(null);
+  const [generated, setGenerated] = useState<{ kind: 'image' | 'video'; url: string } | null>(null);
   const [calling, setCalling] = useState(false);
   const [draft, setDraft] = useState('');
   const [motion, setMotion] = useState(false);
@@ -145,6 +149,28 @@ function CharacterScreen({ params }: { params: Promise<{ slug: string }> }) {
     }
   };
 
+  // Follows a tracked generation until it finishes. If the user leaves first, the webhook
+  // still saves the result or refunds the moments.
+  const followGeneration = async (taskId: string, token: string) => {
+    for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      const res = await fetch(`/api/generations/${encodeURIComponent(taskId)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.state === 'succeeded' && data.url) {
+        setGenerated({ kind: data.kind, url: data.url });
+        setSceneStatus(t(data.kind === 'video' ? 'profile.clipReady' : 'profile.stillReady'));
+        return;
+      }
+      if (data.state === 'failed') {
+        setSceneStatus(t(data.kind === 'video' ? 'profile.clipFailed' : 'profile.imageFailed'));
+        return;
+      }
+    }
+  };
+
   const requestImage = async (prompt: string) => {
     if (!character) return;
     const token = getToken();
@@ -163,10 +189,12 @@ function CharacterScreen({ params }: { params: Promise<{ slug: string }> }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t('profile.imageFailed'));
       if (data.image_url) {
+        setGenerated({ kind: 'image', url: data.image_url });
         setCharacter((prev) => (prev ? { ...prev, avatar_url: prev.avatar_url || data.image_url } : prev));
         setSceneStatus(t('profile.stillReady'));
       } else if (data.jobId) {
         setSceneStatus(t('profile.stillQueued'));
+        if (data.tracked) await followGeneration(data.jobId, token);
       }
     } catch (err) {
       setSceneStatus(err instanceof Error ? err.message : t('profile.imageFailed'));
@@ -201,6 +229,7 @@ function CharacterScreen({ params }: { params: Promise<{ slug: string }> }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t('profile.clipFailed'));
       setSceneStatus(t('profile.clipQueued'));
+      if (data.tracked && data.jobId) await followGeneration(data.jobId, token);
     } catch (err) {
       setSceneStatus(err instanceof Error ? err.message : t('profile.clipFailed'));
     } finally {
@@ -339,6 +368,16 @@ function CharacterScreen({ params }: { params: Promise<{ slug: string }> }) {
               </button>
             </div>
             {sceneStatus ? <p className="mb-2 text-xs text-gray-400">{sceneStatus}</p> : null}
+            {generated ? (
+              generated.kind === 'video' ? (
+                <video src={generated.url} controls playsInline className="mb-2 max-h-80 rounded-lg" />
+              ) : (
+                <a href={generated.url} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={generated.url} alt="" className="mb-2 max-h-80 rounded-lg" />
+                </a>
+              )
+            ) : null}
             <div className="flex items-end gap-2">
               <textarea
                 value={draft}

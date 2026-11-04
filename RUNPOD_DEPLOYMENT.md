@@ -43,7 +43,7 @@ Go to your [Runpod Console](https://www.runpod.io/console/serverless) and config
 #### Environment Variables:
 Add these in Runpod dashboard:
 ```
-NANO_BANANA_API_KEY=AIzaSyCiMwaVuUFCXVNHmZejVhKmY5YptQJir5A
+NANO_BANANA_API_KEY=your_gemini_api_key_here
 ```
 
 #### GPU Configuration:
@@ -60,7 +60,7 @@ Add these to your Vercel project:
 ```
 RUNPOD_API_URL=https://api.runpod.ai/v2/xez46ruk06q834/run
 RUNPOD_API_KEY=your_runpod_api_key
-NANO_BANANA_API_KEY=AIzaSyCiMwaVuUFCXVNHmZejVhKmY5YptQJir5A
+NANO_BANANA_API_KEY=your_gemini_api_key_here
 ```
 
 ### 5. Deploy to Vercel

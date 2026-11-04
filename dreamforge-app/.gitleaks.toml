@@ -3,7 +3,6 @@
 [allowlist]
 paths = [
   ".env.local.example",
-  ".env.example",
   "SECURITY.md",
   "scripts/verify-env.ts",
   ".gitleaks.toml"

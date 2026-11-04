@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
+import LoraLibrary from '@/components/admin/LoraLibrary';
 import MissionControl from '@/components/admin/MissionControl';
+import PhotoShootStudio from '@/components/admin/PhotoShootStudio';
 import { adminAuthClient } from '@/lib/admin-auth-client';
 import { type AdminTab, adminTabFromPath, adminTabPath, pushAdminUrl } from '@/lib/admin-routes';
 
@@ -260,7 +262,7 @@ export default function AdminDashboard() {
               thumbnail_url: prev.thumbnail_url || statusData.image_url
             }));
             setGeneratingImage(false);
-          } else if (statusData.status === 'error') {
+          } else if (statusData.status === 'error' || statusData.status === 'failed') {
             alert('Generation failed: ' + (statusData.error || 'Unknown error'));
             setGeneratingImage(false);
           } else {
@@ -321,7 +323,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 mb-6">
+        <div className="flex flex-wrap gap-1 mb-6">
           <button
             onClick={() => setActiveTab('models')}
             className={`px-6 py-3 rounded-t-lg font-medium transition-colors ${
@@ -351,6 +353,16 @@ export default function AdminDashboard() {
             }`}
           >
             Characters
+          </button>
+          <button
+            onClick={() => setActiveTab('loras')}
+            className={`px-6 py-3 rounded-t-lg font-medium transition-colors ${
+              activeTab === 'loras'
+                ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            LoRAs
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -456,6 +468,8 @@ export default function AdminDashboard() {
 
           {activeTab === 'create-model' && (
             <div>
+              <PhotoShootStudio />
+
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 Create New Model
               </h2>
@@ -860,6 +874,37 @@ export default function AdminDashboard() {
                     >
                       Quick Seed (placeholders)
                     </button>
+                    <button
+                      onClick={async (event) => {
+                        if (!confirm('Add the home page cast to the database? Only continue if every cast portrait is AI-generated and shows a fictional adult aged 21 or older. Each portrait becomes that character\'s reference image.')) return;
+                        const btn = event.currentTarget;
+                        const originalText = btn.textContent;
+                        btn.disabled = true;
+                        btn.textContent = 'Adding cast...';
+                        try {
+                          const res = await fetch('/api/admin/seed-cast', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ attestAiGenerated: true }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                          const results: { slug: string; status: string }[] = data.results || [];
+                          const added = results.filter((result) => result.status === 'added').length;
+                          const others = results.filter((result) => result.status !== 'added');
+                          alert([`Added ${added} of ${results.length} cast members.`, ...others.map((result) => `${result.slug}: ${result.status}`)].join('\n'));
+                        } catch (e) {
+                          alert('Could not add the cast: ' + (e as Error).message);
+                        } finally {
+                          btn.disabled = false;
+                          btn.textContent = originalText || 'Add Home Cast to Database';
+                        }
+                      }}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-medium disabled:opacity-50"
+                    >
+                      Add Home Cast to Database
+                    </button>
                     <Link
                       href="/admin/character"
                       className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -881,7 +926,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-center">
                       <div className="font-semibold text-gray-900 dark:text-white mb-1">Start with 4+ Images</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Train a model using multiple reference images</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Build a consistent character from reference images</div>
                     </div>
                   </Link>
 
@@ -937,6 +982,8 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {activeTab === 'loras' && <LoraLibrary />}
+
           {activeTab === 'settings' && (
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
@@ -984,31 +1031,9 @@ export default function AdminDashboard() {
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                     Nano Banana Configuration
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Configure your Nano Banana SDK settings for AI model integration
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    API keys and endpoints are set as server environment variables, not on this page.
                   </p>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        API Key
-                      </label>
-                      <input
-                        type="password"
-                        defaultValue="AIzaSyCiMwaVuUFCXVNHmZejVhKmY5YptQJir5A"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Runpod Endpoint
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="https://api.runpod.ai/v2/xez46ruk06q834/run"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">

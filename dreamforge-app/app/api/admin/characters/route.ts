@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase } from '@/lib/supabase-server';
 import { v4 as uuidv4 } from 'uuid';
 import { requireBetterAuthAdmin, isAdminUser } from '@/lib/admin-auth-helpers';
+import { isAtLeast21 } from '@/lib/character-age';
 
 // GET /api/admin/characters
 export async function GET(request: NextRequest) {
@@ -46,6 +47,9 @@ export async function POST(request: NextRequest) {
     if (!name || !slug) {
       return NextResponse.json({ error: 'Name (or slug) is required' }, { status: 400 });
     }
+    if (body.age !== undefined && !isAtLeast21({ age: String(body.age) })) {
+      return NextResponse.json({ error: 'Characters must be 21 or older.' }, { status: 400 });
+    }
 
     // Ensure slug uniqueness
     const { data: existing } = await supabase
@@ -67,6 +71,8 @@ export async function POST(request: NextRequest) {
       cover_url: body.cover_url || '',
       tags: Array.isArray(body.tags) ? body.tags : [],
       owner_id: body.owner_id || null,
+      age: body.age ? String(body.age) : null,
+      is_nsfw: body.is_nsfw === true,
       training_status: 'draft',
       training_job_id: null,
       model_ref: null,

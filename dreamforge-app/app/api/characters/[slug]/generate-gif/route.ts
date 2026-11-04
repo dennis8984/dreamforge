@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, isAuthUser } from '@/lib/auth-helpers';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { generateSeedreamSequence } from '@/lib/seedream';
+import { moderateImage, moderateText } from '@/lib/moderation';
 
 export async function POST(
   request: NextRequest,
@@ -31,6 +32,21 @@ export async function POST(
     return NextResponse.json(
       { error: 'Character not found or has no avatar' },
       { status: 404 }
+    );
+  }
+
+  const textCheck = await moderateText(prompt);
+  if (!textCheck.approved) {
+    return NextResponse.json(
+      { error: 'This prompt did not pass the content check.', flags: textCheck.flags },
+      { status: 400 }
+    );
+  }
+  const imageCheck = await moderateImage(character.avatar_url);
+  if (!imageCheck.approved) {
+    return NextResponse.json(
+      { error: 'This image did not pass the content check.', flags: imageCheck.flags },
+      { status: 400 }
     );
   }
 

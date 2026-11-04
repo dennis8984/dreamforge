@@ -41,7 +41,7 @@ dreamforge-app/           # Next.js 15 application
 │   ├── rate-limiter.ts    # Per-tier message rate limiting
 │   ├── moments-config.ts  # Credit costs and packages
 │   ├── encryption.ts      # AES-256-GCM message encryption
-│   ├── moderation.ts      # Gemini-based content moderation
+│   ├── moderation.ts      # Content moderation through SpicyAPI chat models
 │   ├── video-generation.ts# Runpod video generation
 │   ├── voice-client.ts    # Browser SpeechRecognition + audio playback
 │   ├── realtime.ts        # Supabase Realtime subscriptions
