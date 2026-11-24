@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Describe the character in up to ${MAX_DESCRIPTION_LENGTH} characters.` }, { status: 400 });
   }
 
-  const check = await moderateText(description);
+  const check = await moderateText(description, { trustAdultContent: true });
   if (!check.approved) {
     return NextResponse.json({ error: 'This description did not pass the content check.', flags: check.flags }, { status: 400 });
   }

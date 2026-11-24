@@ -235,18 +235,25 @@ export default function AdminDashboard() {
           prompt: currentPrompt || `nude ${newModel.name || 'woman'}, completely naked, no clothes, full nude, explicit nudity, professional photography, studio lighting, high quality, 8k`,
           model_id: 'stable-diffusion-xl',
           parameters: {
-            negative_prompt: 'child, minor, underage, teenager, young',
+            negative_prompt: newModel.negative_prompt || 'child, minor, underage, teenager, clothes, clothing, dressed, censored',
             width: 1024,
             height: 1024,
             steps: 30,
             guidance_scale: 7.5,
-            enhance: false
+            enhance: false,
+            nsfw: true,
           },
           ...(useImageToImage && uploadedImage ? { input_image: uploadedImage } : {})
         })
       });
 
       const result = await response.json();
+      if (!response.ok) {
+        const flags = Array.isArray(result.flags) && result.flags.length ? ` (${result.flags.join(', ')})` : '';
+        alert((result.error || 'Generation failed') + flags);
+        setGeneratingImage(false);
+        return;
+      }
 
       // Poll for completion if job is processing
       if (result.status === 'processing' && result.id) {
@@ -276,6 +283,9 @@ export default function AdminDashboard() {
           generated_images: [...prev.generated_images, result.image_url],
           thumbnail_url: prev.thumbnail_url || result.image_url
         }));
+        setGeneratingImage(false);
+      } else {
+        alert(result.error || result.message || 'No image returned');
         setGeneratingImage(false);
       }
     } catch (error) {
@@ -473,6 +483,9 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 Create New Model
               </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Freeform gens below do not lock body type. For a 100% character match, use Photo and Video Shoot above with that character selected and screened references.
+              </p>
 
               <form onSubmit={handleCreateModel} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

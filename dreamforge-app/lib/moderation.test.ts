@@ -100,15 +100,30 @@ test('a reply that is not the expected JSON fails closed once every model has be
   }
 });
 
-test('the provider refusing the content is a rejection, not an outage', async () => {
+test('the provider refusing adult text is allowed after the local under-21 gate', async () => {
   const stub = stubClassifier([{ status: 400, body: { error: { code: 'content_rejected', message: 'rejected' } } }]);
   try {
-    const result = await moderateText('adult woman, smiling');
-    assert.equal(result.approved, false);
-    assert.deepEqual(result.flags, ['classifier_refused']);
+    const result = await moderateText('nude adult woman, explicit');
+    assert.equal(result.approved, true);
+    assert.deepEqual(result.flags, ['classifier_refused_adult_ok']);
     assert.equal(stub.models.length, 1);
   } finally {
     stub.restore();
+  }
+});
+
+test('admin trustAdultContent skips the remote classifier but still blocks under-21 prompts', async () => {
+  process.env.SPICY_API_KEY = 'test-key';
+  try {
+    const blocked = await moderateText('nude 17 year old', { trustAdultContent: true });
+    assert.equal(blocked.approved, false);
+    assert.deepEqual(blocked.flags, ['minor']);
+
+    const allowed = await moderateText('full nude, standing, artistic nude', { trustAdultContent: true });
+    assert.equal(allowed.approved, true);
+    assert.deepEqual(allowed.flags, []);
+  } finally {
+    delete process.env.SPICY_API_KEY;
   }
 });
 

@@ -23,13 +23,16 @@ export async function POST(request: NextRequest) {
 
     // This route isn't tied to a character or a charge, so it stays an admin test tool on
     // SpicyAPI, where every image costs real money. Users generate through a character.
-    if (isSpicyConfigured()) {
-      const admin = await requireBetterAuthAdmin(request);
-      if (!isAdminUser(admin)) return admin;
-    }
+    const admin = await requireBetterAuthAdmin(request);
+    const isAdmin = isAdminUser(admin);
+    if (isSpicyConfigured() && !isAdmin) return admin;
+
+    // Admin create-model / studio: local under-21 gate only. Remote chat classifiers often
+    // refuse adult nudity with content_rejected even though the platform allows it.
+    const moderateOpts = { trustAdultContent: isAdmin };
 
     if (prompt) {
-      const textCheck = await moderateText(prompt);
+      const textCheck = await moderateText(prompt, moderateOpts);
       if (!textCheck.approved) {
         return NextResponse.json(
           { error: 'This prompt did not pass the content check.', flags: textCheck.flags },
@@ -40,13 +43,12 @@ export async function POST(request: NextRequest) {
     if (input_image) {
       // Image-to-image is admin only. On an open route, anyone could upload a photo of
       // a real person with no release and get an explicit version back.
-      const admin = await requireBetterAuthAdmin(request);
-      if (!isAdminUser(admin)) return admin;
+      if (!isAdmin) return admin;
 
       if (typeof input_image !== 'string') {
         return NextResponse.json({ error: 'Input image must be a string' }, { status: 400 });
       }
-      const imageCheck = await moderateImage(input_image);
+      const imageCheck = await moderateImage(input_image, moderateOpts);
       if (!imageCheck.approved) {
         return NextResponse.json(
           { error: 'This image did not pass the content check.', flags: imageCheck.flags },
@@ -106,8 +108,8 @@ export async function POST(request: NextRequest) {
       height: parameters?.height || 1024,
       guidance_scale: parameters?.guidanceScale || 4.5, // Lowered from 7.5 to match genur.art
       steps: parameters?.steps || 35, // Optimized from 50 to 35 for faster generation
-      enhance: true,
-      nsfw: parameters?.nsfw === true,
+      enhance: parameters?.enhance !== false,
+      nsfw: parameters?.nsfw === true || isAdmin,
       sampler: parameters?.sampler || 'DPM++ 2M',
       input_image: input_image, // For image-to-image
       strength: parameters?.strength || 0.75 // How much to transform the image

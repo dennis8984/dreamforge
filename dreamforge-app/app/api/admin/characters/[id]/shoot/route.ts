@@ -97,6 +97,7 @@ async function shootPhotos(id: string, age: number, direction: string, body: { o
     Array.from({ length: count }, async (_, shot) => {
       const result = await generateWithNanoBanana(prompt, 'spicyapi', {
         enhance: false,
+        nsfw: true,
         imageModel: activeReferenceImageModel(),
         referenceImages: references,
         backgroundImage: backgroundForShot(inUse, shot).url,
@@ -158,17 +159,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const character = await checkCharacter(id);
     if ('problem' in character) return badRequest(character.problem);
 
-    const check = await moderateText(direction);
+    const check = await moderateText(direction, { trustAdultContent: true });
     if (!check.approved) {
-      const unavailable = check.flags.includes('checker_unavailable');
       return NextResponse.json(
         {
-          error: unavailable
-            ? 'The content checker is unavailable, so nothing was started. Try again later.'
-            : 'This direction did not pass the content check.',
+          error: 'This direction did not pass the content check.',
           flags: check.flags,
         },
-        { status: unavailable ? 503 : 400 }
+        { status: 400 }
       );
     }
 

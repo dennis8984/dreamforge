@@ -99,13 +99,9 @@ export async function POST(request: NextRequest) {
       return badRequest('These files are for different model families.');
     }
 
-    const check = await moderateText(prompt);
+    const check = await moderateText(prompt, { trustAdultContent: true });
     if (!check.approved) {
-      const unavailable = check.flags.includes('checker_unavailable');
-      return badRequest(
-        unavailable ? 'The content checker is unavailable, so nothing was started. Try again later.' : 'This prompt did not pass the content check.',
-        unavailable ? 503 : 400
-      );
+      return badRequest('This prompt did not pass the content check.', 400);
     }
 
     const triggers = [...new Set(rows.flatMap((row) => (row.trigger_word ? [row.trigger_word] : [])))];
@@ -132,7 +128,7 @@ export async function POST(request: NextRequest) {
     const source = avatar.startsWith('/') ? new URL(avatar, request.nextUrl.origin).toString() : avatar;
     if (!source.startsWith('https://')) return badRequest('This character needs a portrait at a public https:// address.');
 
-    const imageCheck = await moderateImage(source);
+    const imageCheck = await moderateImage(source, { trustAdultContent: true });
     if (!imageCheck.approved) return badRequest('This portrait did not pass the content check.');
 
     const modelKey = base as VideoModelKey;

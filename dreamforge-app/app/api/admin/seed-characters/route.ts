@@ -33,7 +33,7 @@ const SEED_CHARACTERS = [
 async function generateAvatar(prompt: string, age: string): Promise<string | null> {
   const fullPrompt = `${age} years old, ${prompt}, single person, portrait, full body or upper body, beautiful woman, realistic skin, high quality, photorealistic`;
 
-  const textCheck = await moderateText(fullPrompt);
+  const textCheck = await moderateText(fullPrompt, { trustAdultContent: true });
   if (!textCheck.approved) {
     console.error('Seed prompt did not pass the content check:', textCheck.flags);
     return null;

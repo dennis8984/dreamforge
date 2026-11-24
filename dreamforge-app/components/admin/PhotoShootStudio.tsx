@@ -184,7 +184,8 @@ export default function PhotoShootStudio() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Photo and Video Shoot</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Every photo is shot in the backgrounds below until you change them.
+          Uses this character&apos;s screened reference images so body type and face stay locked.
+          Adult / nude directions are allowed. Upload a black studio plate for plain black backgrounds.
         </p>
       </div>
 
@@ -258,7 +259,7 @@ export default function PhotoShootStudio() {
             rows={3}
             value={direction}
             onChange={(e) => setDirection(e.target.value)}
-            placeholder="Sitting on the bench, wearing a black slip dress, looking off to the side"
+            placeholder="full nude, standing full body facing camera, hands on hips, neon cyan magenta rim light, artistic nude"
             className={`mt-1 ${INPUT_CLASS}`}
           />
         </label>
