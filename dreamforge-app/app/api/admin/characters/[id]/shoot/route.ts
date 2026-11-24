@@ -111,10 +111,22 @@ async function shootPhotos(id: string, age: number, direction: string, body: { o
   );
 
   const taskIds = started.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
-  started.forEach((result) => {
-    if (result.status === 'rejected') console.error('Shoot photo failed to start:', result.reason);
+  const failures = started.flatMap((result) => {
+    if (result.status !== 'rejected') return [];
+    const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+    console.error('Shoot photo failed to start:', result.reason);
+    return [reason];
   });
-  if (taskIds.length === 0) return badRequest('The photos could not start.', 502);
+  if (taskIds.length === 0) {
+    const detail = failures[0] || 'Generation failed';
+    const balance = /insufficient balance/i.test(detail);
+    return badRequest(
+      balance
+        ? 'SpicyAPI balance is empty. Top up credits at spicyapi.ai, then try again.'
+        : `The photos could not start: ${detail}`,
+      balance ? 402 : 502
+    );
+  }
   return NextResponse.json({ taskIds, failedToStart: count - taskIds.length });
 }
 
