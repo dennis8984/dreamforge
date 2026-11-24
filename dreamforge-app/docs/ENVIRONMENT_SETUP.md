@@ -19,14 +19,13 @@ RUNPOD_API_URL=https://api.runpod.ai/v2/YOUR_ENDPOINT_ID/run
 RUNPOD_API_KEY=your_actual_runpod_key_here
 ```
 
-### Production (Vercel)
+### Production (Nubeku)
 
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Select your project
-3. Navigate to **Settings** → **Environment Variables**
+1. Go to [Nubeku Dashboard](https://dash.nubeku.com)
+2. Select your DreamForge app
+3. Open **Secrets** / environment variables
 4. Add each variable with its production value
-5. **Important**: Select all environments (Production, Preview, Development)
-6. Redeploy your application
+5. Redeploy or push so secrets load (`NEXT_PUBLIC_*` must exist at build time)
 
 ## Required Environment Variables
 
@@ -69,28 +68,22 @@ RUNPOD_API_KEY=your_actual_runpod_key_here
 .env.production      # Production reference (no actual values)
 ```
 
-## Vercel Environment Variables
+## Nubeku Secrets
 
-### Adding Variables in Vercel
+### Adding variables
 
-1. Navigate to your project in Vercel Dashboard
-2. Go to **Settings** → **Environment Variables**
-3. Click **Add New**
-4. Enter:
-   - **Key**: The variable name (e.g., `RUNPOD_API_KEY`)
-   - **Value**: Your actual API key
-   - **Environment**: Select where it applies:
-     - ✅ Production
-     - ✅ Preview
-     - ✅ Development (optional)
-5. Click **Save**
+1. Open https://dash.nubeku.com
+2. Select the DreamForge app
+3. Add each secret / env var
+4. Redeploy after changes
 
-### Important Notes for Vercel
+### Important notes
 
-- Variables are automatically injected at build time
-- Changes require redeployment to take effect
+- `NEXT_PUBLIC_*` values are baked in at build time
+- Changes require a new deploy to take effect
 - Use different values for development vs production
-- Vercel encrypts all environment variables
+- Mark sensitive values as secrets in the vault
+- See [NUBEKU_ENV_SETUP.md](../NUBEKU_ENV_SETUP.md)
 
 ## Security Best Practices
 
@@ -137,11 +130,11 @@ This scans your codebase for accidentally hardcoded secrets.
 
 1. Verify the environment variable is set:
    - Local: Check `.env.local`
-   - Production: Check Vercel Dashboard
+   - Production: Check Nubeku secrets at https://dash.nubeku.com
 
 2. Ensure no typos in variable names
 
-3. For Vercel: Redeploy after adding variables
+3. For Nubeku: Redeploy after adding secrets
 
 ### "Invalid API key" Error
 
@@ -153,11 +146,11 @@ This scans your codebase for accidentally hardcoded secrets.
 
 1. Restart your development server after changing `.env.local`
 2. Clear Next.js cache: `rm -rf .next`
-3. For Vercel: Trigger a new deployment
+3. For Nubeku: Trigger a new deployment
 
 ## Support
 
 For help with environment setup:
 - Check [SECURITY.md](../SECURITY.md) for security guidelines
-- Review [VERCEL_ENV_SETUP.md](../VERCEL_ENV_SETUP.md) for Vercel-specific instructions
+- Review [NUBEKU_ENV_SETUP.md](../NUBEKU_ENV_SETUP.md) for production secrets
 - Open an issue on GitHub for technical problems

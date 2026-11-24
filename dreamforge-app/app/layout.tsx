@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Dancing_Script, Great_Vibes, Poppins } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/react";
 import { Suspense } from 'react';
 import AuthHandler from "@/components/AuthHandler";
 import CookieConsent from "@/components/CookieConsent";
@@ -53,7 +52,6 @@ export default function RootLayout({
         <I18nProvider>
           <EntryModal />
           {children}
-          <Analytics />
           <Suspense fallback={null}>
             <AuthHandler />
           </Suspense>

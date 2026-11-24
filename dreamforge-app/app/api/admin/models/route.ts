@@ -157,7 +157,7 @@ function getModels() {
 
 // Save models to file (only works in development)
 function saveModels(models: unknown[]) {
-  // Skip file writes in production (Vercel has read-only filesystem)
+  // Skip file writes in production (container filesystem is ephemeral)
   if (process.env.NODE_ENV === 'production') {
     return false;
   }

@@ -2,6 +2,8 @@
 
 AI companion platform built with Next.js 15 (App Router), Supabase, and Tailwind CSS.
 
+**Hosting**: Production deploys to [Nubeku](https://nubeku.com) (not Vercel). Dashboard: https://dash.nubeku.com. Live apps use `*.apps.nubeku.com`. Set production secrets in the Nubeku secrets vault.
+
 ## Project Structure
 
 ```

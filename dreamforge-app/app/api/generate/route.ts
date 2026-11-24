@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     // If no generation provider is configured, return error
     if (!isSpicyConfigured() && (!RUNPOD_API_KEY || RUNPOD_API_KEY === '')) {
       console.error('No Runpod API key found - cannot generate images');
-      console.error('Set RUNPOD_API_KEY in Vercel environment variables for real generation');
+      console.error('Set RUNPOD_API_KEY in Nubeku secrets for real generation');
 
       return NextResponse.json({
         error: 'AI generation not configured. Please set RUNPOD_API_KEY and RUNPOD_API_URL in environment variables.',
@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
     models_available: isConfigured ? Object.keys(NANO_BANANA_MODELS) : [],
     message: isConfigured ?
       'Real AI generation ready' :
-      'ERROR: Runpod not configured. Set RUNPOD_API_KEY and RUNPOD_API_URL in Vercel environment variables.',
+      'ERROR: Runpod not configured. Set RUNPOD_API_KEY and RUNPOD_API_URL in Nubeku secrets.',
     configuration_required: !isConfigured,
     // Debug info (remove in production)
     debug: {

@@ -52,10 +52,10 @@ NANO_BANANA_API_KEY=your_gemini_api_key_here
 - **Max Workers**: 3
 - **Idle Timeout**: 5 seconds (saves money)
 
-### 4. Update Vercel Environment Variables
+### 4. Update Nubeku Secrets
 
-Add these to your Vercel project:
-1. Go to: https://vercel.com/your-username/dreamforge/settings/environment-variables
+Add these in the Nubeku dashboard:
+1. Go to: https://dash.nubeku.com → DreamForge → Secrets
 2. Add:
 ```
 RUNPOD_API_URL=https://api.runpod.ai/v2/xez46ruk06q834/run
@@ -63,13 +63,10 @@ RUNPOD_API_KEY=your_runpod_api_key
 NANO_BANANA_API_KEY=your_gemini_api_key_here
 ```
 
-### 5. Deploy to Vercel
+### 5. Deploy to Nubeku
 
 ```bash
-# If you haven't deployed yet:
-vercel
-
-# Or push to GitHub (auto-deploys if connected):
+# Push to the branch connected in dash.nubeku.com (auto-deploys):
 git add .
 git commit -m "Configure Runpod endpoint"
 git push
@@ -83,8 +80,8 @@ git push
 3. Try generating an image in the UI
 
 ### Production Testing:
-1. Deploy to Vercel
-2. Visit your-app.vercel.app
+1. Deploy via Nubeku (git push or dashboard redeploy)
+2. Visit https://dreamforge.apps.nubeku.com
 3. Try the generation feature
 
 ## Cost Management
@@ -138,7 +135,7 @@ git push
 
 Once deployed:
 - **Local**: http://localhost:3000
-- **Vercel**: https://dreamforge.vercel.app
-- **API Test**: https://dreamforge.vercel.app/api/generate
+- **Nubeku**: https://dreamforge.apps.nubeku.com
+- **API Test**: https://dreamforge.apps.nubeku.com/api/generate
 
 Your Runpod endpoint is ready! Just add your API key and test it.

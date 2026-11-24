@@ -4,7 +4,7 @@
 
 **NEVER commit API keys, tokens, or secrets to version control!**
 
-All sensitive credentials must be stored in environment variables and added through your hosting provider's dashboard (Vercel, etc.).
+All sensitive credentials must be stored in environment variables and added through Nubeku secrets (https://dash.nubeku.com).
 
 ## Environment Variables Setup
 
@@ -36,14 +36,13 @@ cp .env.local.example .env.local
 # Edit .env.local with your actual values
 ```
 
-## Production Deployment (Vercel)
+## Production Deployment (Nubeku)
 
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Select your project
-3. Navigate to Settings → Environment Variables
-4. Add each variable with its production value
-5. Select appropriate environments (Production/Preview/Development)
-6. Redeploy for changes to take effect
+1. Go to [Nubeku Dashboard](https://dash.nubeku.com)
+2. Select your DreamForge app
+3. Open Secrets / environment variables
+4. Add each variable with its production value (mark secrets appropriately)
+5. Redeploy or push so the new secrets load (set `NEXT_PUBLIC_*` before build)
 
 ## Security Best Practices
 

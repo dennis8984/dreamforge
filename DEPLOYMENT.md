@@ -1,10 +1,12 @@
 # DreamForge Deployment Guide
 
-## Complete deployment setup for Vercel + Supabase + Runpod
+## Complete deployment setup for Nubeku + Supabase + Runpod
+
+Production host is **Nubeku** (https://nubeku.com / https://dash.nubeku.com), not Vercel.
 
 ### Prerequisites
 - GitHub account
-- Vercel account
+- Nubeku account
 - Supabase account
 - Runpod account
 - Stripe account
@@ -61,13 +63,13 @@ git remote add origin https://github.com/YOUR_USERNAME/dreamforge.git
 git push -u origin main
 ```
 
-## Step 4: Deploy to Vercel
+## Step 4: Deploy to Nubeku
 
-1. Go to [vercel.com](https://vercel.com) and click "Import Project"
+1. Sign in at [dash.nubeku.com](https://dash.nubeku.com) and connect GitHub
 
-2. Connect your GitHub repository
+2. Create a Web deployment from the `dreamforge-app` repo/branch (Next.js, port 3000)
 
-3. Configure environment variables in Vercel dashboard:
+3. Add secrets (see `dreamforge-app/NUBEKU_ENV_SETUP.md` and `.env.example`):
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
@@ -80,54 +82,53 @@ git push -u origin main
    RUNPOD_API_URL=https://api.runpod.ai/v2/YOUR_ENDPOINT_ID/runsync
    RUNPOD_API_KEY=your_runpod_api_key
 
-   NANO_BANANA_API_KEY=your_google_gemini_key
+   NEXT_PUBLIC_APP_URL=https://dreamforge.apps.nubeku.com
    ```
 
-4. Deploy!
+4. Deploy — you get HTTPS on `*.apps.nubeku.com` (custom domain optional)
 
 ## Step 5: Configure Stripe Webhooks
 
 1. Go to Stripe Dashboard > Webhooks
-2. Add endpoint: `https://YOUR_DOMAIN.vercel.app/api/webhooks/stripe`
+2. Add endpoint: `https://dreamforge.apps.nubeku.com/api/stripe/webhook` (or your custom domain)
 3. Select events:
    - `checkout.session.completed`
    - `customer.subscription.deleted`
    - `customer.subscription.updated`
-4. Copy webhook secret to Vercel env vars
+4. Copy webhook secret into Nubeku secrets
 
 ## Production Architecture
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Vercel    │────▶│  Supabase   │     │   Runpod    │
-│  (Frontend) │     │ (Database)  │     │   (GPU AI)  │
+│   Nubeku    │────▶│  Supabase   │     │   Runpod    │
+│ (App+CDN)   │     │ (Database)  │     │   (GPU AI)  │
 └─────────────┘     └─────────────┘     └─────────────┘
        │                   │                    │
        ▼                   ▼                    ▼
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Cloudflare │     │   Stripe    │     │  Redis/R2   │
-│    (CDN)    │     │ (Payments)  │     │  (Storage)  │
+│ (via Nubeku)│     │ (Payments)  │     │  (Storage)  │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
 ## Cost Breakdown (Monthly)
 
 ### For 10,000 generations/month:
-- **Vercel Pro**: $20/month
+- **Nubeku**: Hobby/Launch pack (see nubeku.com pricing)
 - **Supabase**: Free tier (up to 500MB)
 - **Runpod GPU**: ~$40 (2 sec/generation @ $0.0002/sec)
 - **Cloudflare R2**: ~$5 (storage)
-- **Total**: ~$65/month
 
 ### Scaling considerations:
 - Runpod auto-scales to zero when idle
 - Use Redis caching to reduce duplicate generations
-- Implement CDN for all static assets
+- Nubeku includes CDN delivery; keep spend cap enabled
 - Consider using spot instances for 70% cost reduction
 
 ## Monitoring & Analytics
 
-1. **Vercel Analytics**: Built-in performance monitoring
+1. **Nubeku**: Build/runtime logs and resource usage (insights injected automatically)
 2. **Supabase Dashboard**: Database metrics
 3. **Runpod Dashboard**: GPU usage and costs
 4. **Stripe Dashboard**: Revenue tracking
